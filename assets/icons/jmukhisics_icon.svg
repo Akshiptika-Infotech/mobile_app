@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- Background -->
+  <rect width="1024" height="1024" rx="180" fill="#1e40af"/>
+  <!-- Graduation cap -->
+  <polygon points="512,260 760,380 512,500 264,380" fill="white" opacity="0.95"/>
+  <rect x="718" y="380" width="24" height="120" rx="12" fill="white" opacity="0.9"/>
+  <ellipse cx="730" cy="510" rx="32" ry="20" fill="white" opacity="0.9"/>
+  <!-- Book pages -->
+  <rect x="360" y="510" width="140" height="180" rx="10" fill="white" opacity="0.2"/>
+  <rect x="524" y="510" width="140" height="180" rx="10" fill="white" opacity="0.15"/>
+  <!-- Text: JM -->
+  <text x="512" y="790" font-family="Arial Black, Arial" font-weight="900" font-size="180" fill="white" text-anchor="middle" opacity="0.95">JM</text>
+</svg>

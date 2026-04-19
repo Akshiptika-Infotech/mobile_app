@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  USB device filter for thermal printers.
+  Covers Heleett and other common USB thermal printer chipsets.
+  USB Class 7 = Printer class (generic match).
+-->
+<resources>
+    <!-- Generic USB Printer Class (class=7) — matches any USB printer including Heleett -->
+    <usb-device class="7" />
+
+    <!-- Heleett / common cheap thermal printers (STM32 chipset) -->
+    <usb-device vendor-id="0x0483" />
+
+    <!-- GreenFan / GOOJPRT / common label printers -->
+    <usb-device vendor-id="0x28e9" />
+
+    <!-- WinChipHead CH9102 chipset -->
+    <usb-device vendor-id="0x0416" />
+
+    <!-- Prolific USB-Serial (some printer adapters) -->
+    <usb-device vendor-id="0x067b" />
+
+    <!-- Epson thermal printers -->
+    <usb-device vendor-id="0x04b8" />
+
+    <!-- Woosim / Bixolon -->
+    <usb-device vendor-id="0x0519" />
+
+    <!-- Custom USB class (vendor-specific printers) -->
+    <usb-device vendor-id="0x0fe6" />
+    <usb-device vendor-id="0x2730" />
+    <usb-device vendor-id="0x0dd4" />
+    <usb-device vendor-id="0x1504" />
+</resources>
