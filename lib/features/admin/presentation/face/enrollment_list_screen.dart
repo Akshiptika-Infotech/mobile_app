@@ -62,6 +62,7 @@ class _EnrollmentListScreenState
         actions: [
           IconButton(
             icon: const Icon(Icons.filter_list_rounded),
+            tooltip: 'Filter',
             onPressed: _showFilterSheet,
           ),
         ],

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile_app/core/widgets/app_empty_state.dart';
 import 'package:mobile_app/core/widgets/app_error_state.dart';
 import 'package:mobile_app/core/widgets/app_skeleton_loader.dart';
+import 'package:mobile_app/core/utils/error_message.dart';
 import 'package:mobile_app/features/admin/data/admin_views_repository.dart';
 
 final _gatePassesProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
@@ -19,7 +20,7 @@ class GatePassesAdminScreen extends ConsumerWidget {
       ref.invalidate(_gatePassesProvider);
     } catch (e) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(friendlyMessage(e))));
     }
   }
 
@@ -37,6 +38,7 @@ class GatePassesAdminScreen extends ConsumerWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
+            tooltip: 'Refresh',
             onPressed: () => ref.invalidate(_gatePassesProvider),
           ),
         ],

@@ -7,6 +7,7 @@ import 'package:mobile_app/core/widgets/app_skeleton_loader.dart';
 import 'package:mobile_app/core/widgets/attendance_status_chip.dart';
 import 'package:mobile_app/features/admin/data/attendance_repository.dart';
 import 'package:mobile_app/features/admin/domain/attendance_model.dart';
+import 'package:mobile_app/core/utils/error_message.dart';
 import 'package:mobile_app/features/admin/providers/attendance_provider.dart';
 
 class StudentAttendanceScreen extends ConsumerStatefulWidget {
@@ -75,7 +76,7 @@ class _StudentAttendanceScreenState extends ConsumerState<StudentAttendanceScree
       ref.invalidate(studentAttendanceProvider(_query));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(friendlyMessage(e))));
     } finally {
       if (mounted) setState(() => _saving = false);
     }

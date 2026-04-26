@@ -33,14 +33,16 @@ class DriverRepository {
       (t) => (t['status'] ?? '').toString().toLowerCase() == 'active',
       orElse: () => trips.first,
     );
-    return DriverTrip.fromTripJson(trip as Map<String, dynamic>);
+    if (trip is! Map<String, dynamic>) throw Exception('Unexpected trip shape');
+    return DriverTrip.fromTripJson(trip);
   }
 
   Future<DriverTrip> _tripFromRoute() async {
     final res = await _dio.get('/api/driver/route');
     final data = res.data;
     if (data == null) return DriverTrip.empty();
-    return DriverTrip.fromRouteJson(data as Map<String, dynamic>);
+    if (data is! Map<String, dynamic>) throw Exception('Unexpected route shape');
+    return DriverTrip.fromRouteJson(data);
   }
 
   // GET /api/driver/route — route with stoppages and student assignments
@@ -48,7 +50,8 @@ class DriverRepository {
     final res = await _dio.get('/api/driver/route');
     final data = res.data;
     if (data == null) return DriverRoute.empty();
-    return DriverRoute.fromJson(data as Map<String, dynamic>);
+    if (data is! Map<String, dynamic>) throw Exception('Unexpected route shape');
+    return DriverRoute.fromJson(data);
   }
 
   // Extract students from route stoppages (no dedicated /api/driver/students endpoint)

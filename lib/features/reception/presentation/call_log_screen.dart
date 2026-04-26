@@ -22,6 +22,7 @@ class CallLogScreen extends ConsumerWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
+            tooltip: 'Refresh',
             onPressed: () => ref.invalidate(callLogProvider),
           ),
         ],

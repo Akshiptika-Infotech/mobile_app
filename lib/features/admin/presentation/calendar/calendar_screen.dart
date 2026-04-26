@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile_app/core/widgets/confirmation_dialog.dart';
 import 'package:mobile_app/features/admin/domain/calendar_model.dart';
+import 'package:mobile_app/core/utils/error_message.dart';
 import 'package:mobile_app/features/admin/providers/calendar_provider.dart';
 
 class CalendarScreen extends ConsumerWidget {
@@ -24,6 +25,7 @@ class CalendarScreen extends ConsumerWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
+            tooltip: 'Refresh',
             onPressed: notifier.refresh,
           ),
         ],
@@ -107,7 +109,7 @@ class _CreateEventSheetState extends ConsumerState<_CreateEventSheet> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
+        SnackBar(content: Text(friendlyMessage(e))),
       );
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -234,6 +236,7 @@ class _MonthHeader extends StatelessWidget {
         children: [
           IconButton(
             icon: const Icon(Icons.chevron_left_rounded),
+            tooltip: 'Previous month',
             onPressed: notifier.previousMonth,
           ),
           Expanded(
@@ -249,6 +252,7 @@ class _MonthHeader extends StatelessWidget {
           ),
           IconButton(
             icon: const Icon(Icons.chevron_right_rounded),
+            tooltip: 'Next month',
             onPressed: notifier.nextMonth,
           ),
         ],
@@ -537,7 +541,7 @@ class _EventTile extends ConsumerWidget {
           .showSnackBar(const SnackBar(content: Text('Event deleted')));
     } catch (e) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(friendlyMessage(e))));
     }
   }
 }

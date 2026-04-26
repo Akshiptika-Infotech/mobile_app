@@ -112,21 +112,40 @@ class StudentModel {
                   json['transportRoute'] ?? json['transport_route'])
               : null,
       photoUrl: (json['photoUrl'] ?? json['photo_url'] ?? json['photoPath'] ?? json['photo_path'] ?? json['photo'])?.toString(),
-      fatherName:
-          (json['fatherName'] ?? json['father_name'])?.toString(),
-      fatherPhone:
-          (json['fatherPhone'] ?? json['father_phone'])?.toString(),
-      motherName:
-          (json['motherName'] ?? json['mother_name'])?.toString(),
-      motherPhone:
-          (json['motherPhone'] ?? json['mother_phone'])?.toString(),
-      parentEmail:
-          (json['parentEmail'] ?? json['parent_email'])?.toString(),
+      // Parent fields are nested under `parent` on the detail endpoint
+      // (Prisma returns the full StudentParent row); fall back to the
+      // top-level keys for any list endpoint that flattens them.
+      fatherName: _parentField(json, 'fatherName', 'father_name'),
+      fatherPhone: _parentField(json, 'fatherContact', 'father_contact', alt: 'fatherPhone'),
+      motherName: _parentField(json, 'motherName', 'mother_name'),
+      motherPhone: _parentField(json, 'motherContact', 'mother_contact', alt: 'motherPhone'),
+      parentEmail: _parentField(json, 'fatherEmail', 'father_email',
+          alt: 'parentEmail') ??
+          _parentField(json, 'motherEmail', 'mother_email'),
       fatherOccupation:
-          (json['fatherOccupation'] ?? json['father_occupation'])?.toString(),
+          _parentField(json, 'fatherOccupation', 'father_occupation'),
       motherOccupation:
-          (json['motherOccupation'] ?? json['mother_occupation'])?.toString(),
+          _parentField(json, 'motherOccupation', 'mother_occupation'),
     );
+  }
+
+  /// Looks for a parent-related field first inside `json['parent']` (the
+  /// shape returned by `/api/admin/students/[id]` which includes the
+  /// related StudentParent row) and then on the top-level JSON for
+  /// flatter responses.
+  static String? _parentField(
+    Map<String, dynamic> json,
+    String camel,
+    String snake, {
+    String? alt,
+  }) {
+    final parent = json['parent'];
+    if (parent is Map<String, dynamic>) {
+      final v = parent[camel] ?? parent[snake] ?? (alt != null ? parent[alt] : null);
+      if (v != null && v.toString().isNotEmpty) return v.toString();
+    }
+    final top = json[camel] ?? json[snake] ?? (alt != null ? json[alt] : null);
+    return top?.toString();
   }
 
   Map<String, dynamic> toJson() => {

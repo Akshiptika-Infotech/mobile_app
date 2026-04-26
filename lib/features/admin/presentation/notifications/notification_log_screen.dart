@@ -24,6 +24,7 @@ class NotificationLogScreen extends ConsumerWidget {
           IconButton(
             onPressed: () => ref.invalidate(notificationLogProvider),
             icon: const Icon(Icons.refresh_rounded),
+            tooltip: 'Refresh',
           ),
         ],
       ),

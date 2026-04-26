@@ -1,4 +1,5 @@
 ﻿import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile_app/core/widgets/app_empty_state.dart';
@@ -6,6 +7,7 @@ import 'package:mobile_app/core/widgets/app_error_state.dart';
 import 'package:mobile_app/core/widgets/app_skeleton_loader.dart';
 import 'package:mobile_app/core/widgets/confirmation_dialog.dart';
 import 'package:mobile_app/features/admin/data/transport_repository.dart';
+import 'package:mobile_app/core/utils/error_message.dart';
 import 'package:mobile_app/features/admin/providers/transport_admin_provider.dart';
 
 class TransportRebatesScreen extends ConsumerStatefulWidget {
@@ -62,7 +64,7 @@ class _TransportRebatesScreenState extends ConsumerState<TransportRebatesScreen>
       ref.invalidate(transportRebatesProvider);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(friendlyMessage(e))));
     }
   }
 
@@ -107,7 +109,7 @@ class _TransportRebatesScreenState extends ConsumerState<TransportRebatesScreen>
               return Dismissible(
                 key: ValueKey(r.id),
                 direction: DismissDirection.endToStart,
-                confirmDismiss: (_) => _confirmDelete(r.studentName),
+                confirmDismiss: (_) { HapticFeedback.mediumImpact(); return _confirmDelete(r.studentName); },
                 onDismissed: (_) => _delete(r.id),
                 background: Container(
                   alignment: Alignment.centerRight,

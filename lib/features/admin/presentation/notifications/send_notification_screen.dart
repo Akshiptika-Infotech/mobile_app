@@ -1,5 +1,6 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mobile_app/core/utils/error_message.dart';
 import 'package:mobile_app/features/admin/data/notification_repository.dart';
 
 class SendNotificationScreen extends ConsumerStatefulWidget {
@@ -47,7 +48,7 @@ class _SendNotificationScreenState extends ConsumerState<SendNotificationScreen>
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
+        SnackBar(content: Text(friendlyMessage(e))),
       );
     } finally {
       if (mounted) setState(() => _sending = false);

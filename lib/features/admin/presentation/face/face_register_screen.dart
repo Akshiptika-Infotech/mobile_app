@@ -36,27 +36,45 @@ class _FaceRegisterScreenState extends ConsumerState<FaceRegisterScreen> {
   bool _initialised = false;
   bool _capturing = false;
   String? _statusMessage;
+  bool _isError = false;
 
   @override
   void initState() {
     super.initState();
     _initCamera();
+    _initEmbedder();
+  }
+
+  Future<void> _initEmbedder() async {
+    try {
+      await FaceEmbedder.instance.init();
+    } catch (_) {
+      // Non-fatal: will surface error message when capture is attempted.
+    }
   }
 
   Future<void> _initCamera() async {
-    final cameras = await availableCameras();
-    if (cameras.isEmpty) {
-      if (mounted) setState(() => _statusMessage = 'No camera available');
-      return;
+    try {
+      final cameras = await availableCameras();
+      if (cameras.isEmpty) {
+        if (mounted) setState(() => _statusMessage = 'No camera available');
+        return;
+      }
+      final front = cameras.firstWhere(
+        (c) => c.lensDirection == CameraLensDirection.front,
+        orElse: () => cameras.first,
+      );
+      _cam = CameraController(front, ResolutionPreset.high,
+          enableAudio: false, imageFormatGroup: ImageFormatGroup.bgra8888);
+      await _cam!.initialize();
+      if (mounted) setState(() => _initialised = true);
+    } on CameraException catch (e) {
+      if (mounted) {
+        setState(() => _statusMessage = e.description ?? 'Camera unavailable');
+      }
+    } catch (e) {
+      if (mounted) setState(() => _statusMessage = 'Camera error: $e');
     }
-    final front = cameras.firstWhere(
-      (c) => c.lensDirection == CameraLensDirection.front,
-      orElse: () => cameras.first,
-    );
-    _cam = CameraController(front, ResolutionPreset.high,
-        enableAudio: false, imageFormatGroup: ImageFormatGroup.bgra8888);
-    await _cam!.initialize();
-    if (mounted) setState(() => _initialised = true);
   }
 
   @override
@@ -79,6 +97,7 @@ class _FaceRegisterScreenState extends ConsumerState<FaceRegisterScreen> {
     setState(() {
       _capturing = true;
       _statusMessage = 'Detecting face…';
+      _isError = false;
     });
 
     try {
@@ -93,25 +112,25 @@ class _FaceRegisterScreenState extends ConsumerState<FaceRegisterScreen> {
         setState(() {
           _capturing = false;
           _statusMessage = 'No face detected — try again';
+          _isError = true;
         });
         return;
       }
 
-      setState(() => _statusMessage = 'Computing embedding…');
+      setState(() { _statusMessage = 'Computing embedding…'; _isError = false; });
 
-      // Get embedding
+      // Get embedding (embedder already initialised in initState)
       final img = await FaceEmbedder.fromImageFile(xFile.path);
       if (!mounted) return;
       if (img == null) {
         setState(() {
           _capturing = false;
           _statusMessage = 'Failed to process image';
+          _isError = true;
         });
         return;
       }
 
-      await FaceEmbedder.instance.init();
-      if (!mounted) return;
       final embedding = FaceEmbedder.instance.getEmbedding(img);
 
       // Register via notifier
@@ -136,6 +155,7 @@ class _FaceRegisterScreenState extends ConsumerState<FaceRegisterScreen> {
           _capturing = false;
           _statusMessage =
               ref.read(faceRegisterNotifierProvider).error ?? 'Registration failed';
+          _isError = true;
         });
       }
     } catch (e) {
@@ -143,6 +163,7 @@ class _FaceRegisterScreenState extends ConsumerState<FaceRegisterScreen> {
       setState(() {
         _capturing = false;
         _statusMessage = e.toString();
+        _isError = true;
       });
     }
   }
@@ -247,13 +268,7 @@ class _FaceRegisterScreenState extends ConsumerState<FaceRegisterScreen> {
                         : 'Position your face inside the oval\nthen press Capture'),
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: !_hasIdentifier ||
-                          _statusMessage?.contains('failed') == true ||
-                          _statusMessage?.contains('No face') == true ||
-                          _statusMessage?.contains('No student') == true ||
-                          _statusMessage?.contains('No person') == true
-                      ? Colors.redAccent
-                      : Colors.white,
+                  color: (!_hasIdentifier || _isError) ? Colors.redAccent : Colors.white,
                   fontSize: 14,
                 ),
               ),

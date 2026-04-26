@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile_app/core/network/dio_client.dart';
+import 'package:mobile_app/core/utils/response_utils.dart';
 import 'package:mobile_app/features/admin/domain/notification_model.dart';
 
 class NotificationRepository {
@@ -24,21 +25,9 @@ class NotificationRepository {
 
   Future<List<SentNotification>> fetchLog() async {
     final res = await _dio.get('/api/admin/notifications/log');
-    final data = res.data;
-    final list = _extractList(data);
-    return list
-        .map((e) => SentNotification.fromJson(e as Map<String, dynamic>))
+    return extractList(res.data, keys: const ['data', 'notifications', 'log'])
+        .map(SentNotification.fromJson)
         .toList();
-  }
-
-  static List<dynamic> _extractList(dynamic data) {
-    if (data is List) return data;
-    if (data is Map<String, dynamic>) {
-      for (final key in ['data', 'notifications', 'log']) {
-        if (data[key] is List) return data[key] as List;
-      }
-    }
-    return [];
   }
 }
 

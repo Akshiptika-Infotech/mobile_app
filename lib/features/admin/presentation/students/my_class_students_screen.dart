@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -39,6 +40,7 @@ class MyClassStudentsScreen extends ConsumerWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
+            tooltip: 'Refresh',
             onPressed: () => ref.refresh(myClassStudentsProvider),
           ),
         ],
@@ -190,11 +192,19 @@ class _StudentModelCard extends StatelessWidget {
           CircleAvatar(
             radius: 22,
             backgroundColor: color.withValues(alpha: 0.15),
-            child: Text(
-              student.name.isNotEmpty ? student.name[0].toUpperCase() : '?',
-              style: TextStyle(
-                  fontWeight: FontWeight.bold, color: color, fontSize: 15),
-            ),
+            backgroundImage: (student.photoUrl != null &&
+                    student.photoUrl!.isNotEmpty)
+                ? CachedNetworkImageProvider(student.photoUrl!)
+                : null,
+            child: (student.photoUrl == null || student.photoUrl!.isEmpty)
+                ? Text(
+                    student.name.isNotEmpty
+                        ? student.name[0].toUpperCase()
+                        : '?',
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold, color: color, fontSize: 15),
+                  )
+                : null,
           ),
           const SizedBox(width: 12),
           Expanded(

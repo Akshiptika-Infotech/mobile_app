@@ -40,6 +40,7 @@ class _EntryExitLogScreenState extends ConsumerState<EntryExitLogScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
+            tooltip: 'Refresh',
             onPressed: () => ref.invalidate(_entryExitProvider),
           ),
         ],

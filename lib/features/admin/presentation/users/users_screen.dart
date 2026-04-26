@@ -44,15 +44,20 @@ class _UsersBodyState extends ConsumerState<_UsersBody> {
   final _searchCtrl = TextEditingController();
   String _roleFilter = 'All';
 
-  static const _roles = [
-    'All',
-    'admin',
-    'teacher',
-    'accountant',
-    'librarian',
-    'receptionist',
-    'driver',
-    'security',
+  // Filter chips. Each entry is (label shown to user, exact role enum
+  // returned by /api/admin/users). The enum values must match the backend
+  // Role enum exactly — uppercase + underscore — or the equality test
+  // below will silently filter everything out.
+  static const _roles = <(String, String)>[
+    ('All',           'All'),
+    ('Admin',         'ADMIN'),
+    ('Super Admin',   'SUPER_ADMIN'),
+    ('Teacher',       'TEACHER'),
+    ('Clerk',         'CLERK'),
+    ('Receptionist',  'RECEPTIONIST'),
+    ('Driver',        'DRIVER'),
+    ('Security',      'SECURITY_GUARD'),
+    ('Web Admin',     'WEB_ADMIN'),
   ];
 
   @override
@@ -142,13 +147,13 @@ class _UsersBodyState extends ConsumerState<_UsersBody> {
                 separatorBuilder: (_, __) =>
                     const SizedBox(width: 8),
                 itemBuilder: (_, i) {
-                  final r = _roles[i];
-                  final selected = _roleFilter == r;
+                  final (label, value) = _roles[i];
+                  final selected = _roleFilter == value;
                   return FilterChip(
-                    label: Text(r),
+                    label: Text(label),
                     selected: selected,
                     onSelected: (_) =>
-                        setState(() => _roleFilter = r),
+                        setState(() => _roleFilter = value),
                   );
                 },
               ),
@@ -259,12 +264,17 @@ class _StaffTile extends ConsumerWidget {
         child: ListTile(
           leading: CircleAvatar(
             backgroundColor: cs.primaryContainer,
-            child: Text(
-              user.name.isNotEmpty ? user.name[0].toUpperCase() : '?',
-              style: TextStyle(
-                  color: cs.onPrimaryContainer,
-                  fontWeight: FontWeight.bold),
-            ),
+            backgroundImage: (user.image != null && user.image!.isNotEmpty)
+                ? NetworkImage(user.image!)
+                : null,
+            child: (user.image == null || user.image!.isEmpty)
+                ? Text(
+                    user.name.isNotEmpty ? user.name[0].toUpperCase() : '?',
+                    style: TextStyle(
+                        color: cs.onPrimaryContainer,
+                        fontWeight: FontWeight.bold),
+                  )
+                : null,
           ),
           title: Text(user.name,
               style: const TextStyle(fontWeight: FontWeight.w600)),
@@ -360,23 +370,24 @@ class _StaffFormSheetState extends ConsumerState<_StaffFormSheet> {
       text: widget.existing?.email ?? '');
   late final _phoneCtrl = TextEditingController(
       text: widget.existing?.phone ?? '');
-  String _role = 'teacher';
+  String _role = 'TEACHER';
   bool _isSubmitting = false;
 
-  static const _roles = [
-    'admin',
-    'teacher',
-    'accountant',
-    'librarian',
-    'receptionist',
-    'driver',
-    'security',
+  // (display label, role enum). Must match the Prisma Role enum exactly.
+  static const _roles = <(String, String)>[
+    ('Admin',         'ADMIN'),
+    ('Teacher',       'TEACHER'),
+    ('Clerk',         'CLERK'),
+    ('Receptionist',  'RECEPTIONIST'),
+    ('Driver',        'DRIVER'),
+    ('Security',      'SECURITY_GUARD'),
+    ('Web Admin',     'WEB_ADMIN'),
   ];
 
   @override
   void initState() {
     super.initState();
-    _role = widget.existing?.role ?? 'teacher';
+    _role = widget.existing?.role ?? 'TEACHER';
   }
 
   @override
@@ -437,7 +448,10 @@ class _StaffFormSheetState extends ConsumerState<_StaffFormSheet> {
                 decoration: const InputDecoration(
                     labelText: 'Role', border: OutlineInputBorder()),
                 items: _roles
-                    .map((r) => DropdownMenuItem(value: r, child: Text(r)))
+                    .map((entry) => DropdownMenuItem(
+                          value: entry.$2,
+                          child: Text(entry.$1),
+                        ))
                     .toList(),
                 onChanged: (v) => setState(() => _role = v ?? _role),
               ),

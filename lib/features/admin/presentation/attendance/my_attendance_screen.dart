@@ -21,6 +21,7 @@ class MyAttendanceScreen extends ConsumerWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
+            tooltip: 'Refresh',
             onPressed: () => ref.refresh(myAttendanceProvider),
           ),
         ],

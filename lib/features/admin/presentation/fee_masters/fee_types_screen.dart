@@ -1,10 +1,12 @@
 ﻿import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile_app/core/widgets/app_empty_state.dart';
 import 'package:mobile_app/core/widgets/app_error_state.dart';
 import 'package:mobile_app/core/widgets/app_skeleton_loader.dart';
 import 'package:mobile_app/core/widgets/confirmation_dialog.dart';
 import 'package:mobile_app/features/admin/data/fee_master_repository.dart';
+import 'package:mobile_app/core/utils/error_message.dart';
 import 'package:mobile_app/features/admin/providers/fee_master_provider.dart';
 
 class FeeTypesScreen extends ConsumerStatefulWidget {
@@ -42,7 +44,7 @@ class _FeeTypesScreenState extends ConsumerState<FeeTypesScreen> {
       ref.invalidate(feeTypesProvider);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(friendlyMessage(e))));
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -63,7 +65,7 @@ class _FeeTypesScreenState extends ConsumerState<FeeTypesScreen> {
       ref.invalidate(feeTypesProvider);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(friendlyMessage(e))));
     }
   }
 
@@ -140,7 +142,7 @@ class _FeeTypesScreenState extends ConsumerState<FeeTypesScreen> {
                     return Dismissible(
                       key: ValueKey(type.id),
                       direction: DismissDirection.endToStart,
-                      confirmDismiss: (_) => _confirmDelete(type.name),
+                      confirmDismiss: (_) { HapticFeedback.mediumImpact(); return _confirmDelete(type.name); },
                       onDismissed: (_) => _delete(type.id),
                       background: Container(
                         alignment: Alignment.centerRight,

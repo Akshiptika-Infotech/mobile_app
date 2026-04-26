@@ -5,6 +5,7 @@ import 'package:mobile_app/core/widgets/app_empty_state.dart';
 import 'package:mobile_app/core/widgets/app_error_state.dart';
 import 'package:mobile_app/core/widgets/app_skeleton_loader.dart';
 import 'package:mobile_app/core/widgets/confirmation_dialog.dart';
+import 'package:mobile_app/core/utils/error_message.dart';
 import 'package:mobile_app/features/admin/data/admin_views_repository.dart';
 
 final _receptionAppointmentsProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
@@ -33,7 +34,7 @@ class ReceptionAppointmentsAdminScreen extends ConsumerWidget {
           .showSnackBar(const SnackBar(content: Text('Appointment cancelled')));
     } catch (e) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(friendlyMessage(e))));
     }
   }
 
@@ -61,6 +62,7 @@ class ReceptionAppointmentsAdminScreen extends ConsumerWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
+            tooltip: 'Refresh',
             onPressed: () => ref.invalidate(_receptionAppointmentsProvider),
           ),
         ],
@@ -244,7 +246,7 @@ class _AddAppointmentSheetState extends ConsumerState<_AddAppointmentSheet> {
       Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(friendlyMessage(e))));
     } finally {
       if (mounted) setState(() => _saving = false);
     }

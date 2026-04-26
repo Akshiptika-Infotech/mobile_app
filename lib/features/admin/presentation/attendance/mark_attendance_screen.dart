@@ -60,6 +60,7 @@ class MarkAttendanceScreen extends ConsumerWidget {
           else
             IconButton(
               icon: const Icon(Icons.qr_code_scanner_rounded),
+
               tooltip: 'QR Attendance',
               onPressed: openQrScanner,
             ),

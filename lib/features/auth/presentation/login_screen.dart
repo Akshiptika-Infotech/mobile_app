@@ -377,7 +377,7 @@ class _FormContent extends StatelessWidget {
             ),
             validator: (v) {
               if (v == null || v.trim().isEmpty) return 'Email is required.';
-              if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(v.trim())) {
+              if (!RegExp(r'^[\w.+-]+@[\w-]+\.[\w.]{2,}$').hasMatch(v.trim())) {
                 return 'Enter a valid email address.';
               }
               return null;

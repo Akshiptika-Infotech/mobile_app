@@ -1,4 +1,5 @@
 ﻿import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile_app/core/widgets/app_empty_state.dart';
@@ -6,6 +7,7 @@ import 'package:mobile_app/core/widgets/app_error_state.dart';
 import 'package:mobile_app/core/widgets/app_skeleton_loader.dart';
 import 'package:mobile_app/core/widgets/confirmation_dialog.dart';
 import 'package:mobile_app/features/admin/data/fee_master_repository.dart';
+import 'package:mobile_app/core/utils/error_message.dart';
 import 'package:mobile_app/features/admin/providers/fee_master_provider.dart';
 
 class ConcessionsScreen extends ConsumerStatefulWidget {
@@ -46,7 +48,7 @@ class _ConcessionsScreenState extends ConsumerState<ConcessionsScreen> {
       ref.invalidate(concessionsProvider);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(friendlyMessage(e))));
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -67,7 +69,7 @@ class _ConcessionsScreenState extends ConsumerState<ConcessionsScreen> {
       ref.invalidate(concessionsProvider);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(friendlyMessage(e))));
     }
   }
 
@@ -164,7 +166,7 @@ class _ConcessionsScreenState extends ConsumerState<ConcessionsScreen> {
                     return Dismissible(
                       key: ValueKey(c.id),
                       direction: DismissDirection.endToStart,
-                      confirmDismiss: (_) => _confirmDelete(c.name),
+                      confirmDismiss: (_) { HapticFeedback.mediumImpact(); return _confirmDelete(c.name); },
                       onDismissed: (_) => _delete(c.id),
                       background: Container(
                         alignment: Alignment.centerRight,

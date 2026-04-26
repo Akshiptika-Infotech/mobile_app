@@ -62,6 +62,7 @@ class _AppSearchBarState extends State<AppSearchBar> {
             if (_controller.text.isEmpty) return const SizedBox.shrink();
             return IconButton(
               icon: const Icon(Icons.clear),
+              tooltip: 'Clear',
               onPressed: () {
                 _controller.clear();
                 _debounce?.cancel();

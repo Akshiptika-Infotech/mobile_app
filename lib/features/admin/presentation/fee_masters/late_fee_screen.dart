@@ -2,6 +2,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile_app/core/widgets/app_error_state.dart';
 import 'package:mobile_app/features/admin/data/fee_master_repository.dart';
+import 'package:mobile_app/core/utils/error_message.dart';
 import 'package:mobile_app/features/admin/providers/fee_master_provider.dart';
 
 class LateFeeScreen extends ConsumerStatefulWidget {
@@ -41,7 +42,7 @@ class _LateFeeScreenState extends ConsumerState<LateFeeScreen> {
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(friendlyMessage(e))));
     } finally {
       if (mounted) setState(() => _saving = false);
     }

@@ -29,6 +29,7 @@ class VisitorsScreen extends ConsumerWidget {
           _UsbStatusIcon(),
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
+            tooltip: 'Refresh',
             onPressed: () => ref.invalidate(visitorsProvider),
           ),
         ],

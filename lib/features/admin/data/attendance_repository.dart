@@ -17,7 +17,16 @@ class AttendanceRepository {
       '/api/teacher/attendance',
       queryParameters: {'date': date},
     );
-    final data = response.data as Map<String, dynamic>;
+    final data = response.data as Map<String, dynamic>?;
+    if (data == null) {
+      return const MyClassAttendanceResponse(
+        students: [],
+        classId: null,
+        sectionId: null,
+        academicYearId: null,
+        locked: false,
+      );
+    }
 
     // Server now echoes classId, sectionId, academicYearId directly in GET response
     final classId = data['classId']?.toString();
@@ -56,8 +65,6 @@ class AttendanceRepository {
       if (academicYearId != null) 'academicYearId': academicYearId,
       if (sectionId != null) 'sectionId': sectionId,
     };
-    // ignore: avoid_print
-    print('[AttendanceRepo] POST body: $body');
     await _dio.post('/api/teacher/attendance', data: body);
   }
 

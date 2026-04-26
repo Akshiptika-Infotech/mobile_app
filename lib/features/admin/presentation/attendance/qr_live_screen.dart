@@ -32,6 +32,7 @@ class QrLiveScreen extends ConsumerWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
+            tooltip: 'Refresh',
             onPressed: () =>
                 ref.read(qrLiveNotifierProvider(params).notifier).refresh(),
           ),

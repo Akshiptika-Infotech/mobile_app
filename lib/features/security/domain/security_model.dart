@@ -52,17 +52,17 @@ class EntryExitRecord {
     // Resolve person name from nested objects (actual DB shape)
     String personName = '';
     String personType = 'visitor';
-    if (json['student'] != null) {
-      final s = json['student'] as Map<String, dynamic>;
-      personName = '${s['firstName'] ?? ''} ${s['lastName'] ?? ''}'.trim();
+    final studentData = json['student'] as Map<String, dynamic>?;
+    final staffData = json['staff'] as Map<String, dynamic>?;
+    final visitorData = json['visitor'] as Map<String, dynamic>?;
+    if (studentData != null) {
+      personName = '${studentData['firstName'] ?? ''} ${studentData['lastName'] ?? ''}'.trim();
       personType = 'student';
-    } else if (json['staff'] != null) {
-      final st = json['staff'] as Map<String, dynamic>;
-      personName = (st['name'] ?? '').toString();
+    } else if (staffData != null) {
+      personName = (staffData['name'] ?? '').toString();
       personType = 'staff';
-    } else if (json['visitor'] != null) {
-      final v = json['visitor'] as Map<String, dynamic>;
-      personName = (v['fullName'] ?? v['name'] ?? '').toString();
+    } else if (visitorData != null) {
+      personName = (visitorData['fullName'] ?? visitorData['name'] ?? '').toString();
       personType = 'visitor';
     } else {
       personName = (json['personName'] ?? json['person_name'] ?? json['name'] ?? '').toString();

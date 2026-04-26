@@ -19,15 +19,23 @@ class TimetablePeriod {
   final String startTime;
   final String endTime;
 
+  static String _readName(dynamic v) {
+    if (v is String) return v;
+    if (v is Map<String, dynamic>) return (v['name'] ?? '').toString();
+    return '';
+  }
+
   factory TimetablePeriod.fromJson(Map<String, dynamic> json) {
     return TimetablePeriod(
       id: (json['id'] ?? '').toString(),
-      subject: (json['subject'] ?? '').toString(),
-      teacherName:
-          (json['teacherName'] ?? json['teacher_name'] ?? '').toString(),
-      className: (json['class'] ?? json['className'] ?? '').toString(),
-      section: (json['section'] ?? '').toString(),
-      day: (json['day'] ?? '').toString(),
+      subject: _readName(json['subject']),
+      teacherName: _readName(json['teacher']),
+      className: _readName(json['class']).isNotEmpty
+          ? _readName(json['class'])
+          : (json['className'] ?? '').toString(),
+      section: _readName(json['section']),
+      // Backend returns dayOfWeek as an uppercase enum like "MONDAY".
+      day: (json['dayOfWeek'] ?? json['day'] ?? '').toString(),
       startTime:
           (json['startTime'] ?? json['start_time'] ?? '').toString(),
       endTime: (json['endTime'] ?? json['end_time'] ?? '').toString(),

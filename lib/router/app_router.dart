@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile_app/features/admin/presentation/admin_shell.dart';
+import 'package:mobile_app/features/admin/presentation/approvals/approvals_screen.dart';
 import 'package:mobile_app/features/admin/presentation/attendance/mark_attendance_screen.dart';
 import 'package:mobile_app/features/admin/presentation/attendance/my_attendance_screen.dart';
 import 'package:mobile_app/features/admin/presentation/attendance/leave_requests_screen.dart';
@@ -138,6 +139,10 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/admin/dashboard',
             builder: (_, __) => const admin.DashboardScreen(),
+          ),
+          GoRoute(
+            path: '/admin/approvals',
+            builder: (_, __) => const ApprovalsScreen(),
           ),
           GoRoute(
             path: '/admin/students',

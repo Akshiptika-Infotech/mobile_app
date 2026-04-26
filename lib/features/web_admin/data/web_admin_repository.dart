@@ -124,7 +124,8 @@ class WebAdminRepository {
       ),
     });
     final uploadRes = await _dio.post('/api/admin/upload', data: uploadForm);
-    final uploadData = uploadRes.data as Map<String, dynamic>;
+    final uploadData = uploadRes.data as Map<String, dynamic>?;
+    if (uploadData == null) throw Exception('Upload failed: empty response');
     final imagePath = (uploadData['url'] ?? uploadData['path'] ?? '').toString();
 
     // Step 2: register photo with album

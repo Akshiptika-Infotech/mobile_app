@@ -30,6 +30,7 @@ class ReceptionShell extends StatelessWidget {
     final selectedIndex = _selectedIndex(location);
 
     return Scaffold(
+      restorationId: 'reception_shell',
       body: child,
       bottomNavigationBar: NavigationBar(
         selectedIndex: selectedIndex,

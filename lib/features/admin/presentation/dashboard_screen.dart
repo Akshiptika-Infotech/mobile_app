@@ -45,6 +45,7 @@ class DashboardScreen extends ConsumerWidget {
                 IconButton(
                   icon: const Icon(Icons.notifications_outlined,
                       color: Colors.white),
+                  tooltip: 'Notifications',
                   onPressed: () {},
                 ),
                 IconButton(
@@ -387,28 +388,10 @@ class _DashboardContent extends StatelessWidget {
                   SizedBox(
                     width: itemWidth,
                     child: _QuickAction(
-                      icon: Icons.person_add_rounded,
-                      label: 'Add Student',
-                      color: Colors.blue,
-                      onTap: () => context.push('/admin/students/new'),
-                    ),
-                  ),
-                  SizedBox(
-                    width: itemWidth,
-                    child: _QuickAction(
-                      icon: Icons.receipt_long_rounded,
-                      label: 'Collect Fee',
-                      color: Colors.green,
-                      onTap: () => context.push('/admin/fee-collection'),
-                    ),
-                  ),
-                  SizedBox(
-                    width: itemWidth,
-                    child: _QuickAction(
-                      icon: Icons.history_rounded,
-                      label: 'History',
-                      color: Colors.orange,
-                      onTap: () => context.push('/admin/fee-collection/history'),
+                      icon: Icons.task_alt_rounded,
+                      label: 'Approvals',
+                      color: const Color(0xFFEA580C),
+                      onTap: () => context.go('/admin/approvals'),
                     ),
                   ),
                   SizedBox(
@@ -416,8 +399,26 @@ class _DashboardContent extends StatelessWidget {
                     child: _QuickAction(
                       icon: Icons.bar_chart_rounded,
                       label: 'Reports',
-                      color: Colors.purple,
-                      onTap: () {},
+                      color: const Color(0xFF7C3AED),
+                      onTap: () => context.go('/admin/reports/collection'),
+                    ),
+                  ),
+                  SizedBox(
+                    width: itemWidth,
+                    child: _QuickAction(
+                      icon: Icons.group_rounded,
+                      label: 'Users',
+                      color: const Color(0xFF2563EB),
+                      onTap: () => context.go('/admin/users'),
+                    ),
+                  ),
+                  SizedBox(
+                    width: itemWidth,
+                    child: _QuickAction(
+                      icon: Icons.person_outline_rounded,
+                      label: 'Profile',
+                      color: const Color(0xFF16A34A),
+                      onTap: () => context.go('/admin/profile'),
                     ),
                   ),
                 ],

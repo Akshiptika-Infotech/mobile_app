@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:mobile_app/core/widgets/app_empty_state.dart';
 import 'package:mobile_app/core/widgets/app_error_state.dart';
 import 'package:mobile_app/core/widgets/app_skeleton_loader.dart';
+import 'package:mobile_app/core/utils/error_message.dart';
 import 'package:mobile_app/features/admin/providers/certificate_provider.dart';
 
 class CertificatesIssuedScreen extends ConsumerWidget {
@@ -23,6 +24,7 @@ class CertificatesIssuedScreen extends ConsumerWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
+            tooltip: 'Refresh',
             onPressed: () => ref.read(certificateProvider.notifier).load(),
           ),
         ],
@@ -156,7 +158,7 @@ class _IssueCertSheetState extends State<_IssueCertSheet> {
       Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(friendlyMessage(e))));
     } finally {
       if (mounted) setState(() => _saving = false);
     }

@@ -30,6 +30,7 @@ class DriverShell extends StatelessWidget {
     final selectedIndex = _selectedIndex(location);
 
     return Scaffold(
+      restorationId: 'driver_shell',
       body: child,
       bottomNavigationBar: NavigationBar(
         selectedIndex: selectedIndex,

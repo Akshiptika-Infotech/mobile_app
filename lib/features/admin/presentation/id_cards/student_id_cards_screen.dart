@@ -31,6 +31,7 @@ class _StudentIdCardsScreenState extends ConsumerState<StudentIdCardsScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
+            tooltip: 'Refresh',
             onPressed: () => ref.read(idCardProvider.notifier).load(),
           ),
         ],

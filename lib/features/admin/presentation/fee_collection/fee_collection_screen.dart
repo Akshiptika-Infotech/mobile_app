@@ -46,6 +46,7 @@ class _FeeCollectionScreenState extends ConsumerState<FeeCollectionScreen> {
           leading: state.step != FeeCollectionStep.search
               ? IconButton(
                   icon: const Icon(Icons.arrow_back),
+                  tooltip: 'Back',
                   onPressed: () =>
                       ref.read(feeCollectionProvider.notifier).goBack(),
                 )
@@ -252,6 +253,7 @@ class _SearchStep extends StatelessWidget {
                   : ctrl.text.isNotEmpty
                       ? IconButton(
                           icon: const Icon(Icons.clear),
+                          tooltip: 'Clear',
                           iconSize: 20,
                           padding: const EdgeInsets.all(8),
                           onPressed: () {

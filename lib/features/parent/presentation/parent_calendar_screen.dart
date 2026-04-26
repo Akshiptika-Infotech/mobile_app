@@ -91,6 +91,7 @@ class _ParentCalendarScreenState extends ConsumerState<ParentCalendarScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
+            tooltip: 'Refresh',
             onPressed: () {
               if (params != null) ref.invalidate(parentCalendarProvider(params));
             },

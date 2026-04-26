@@ -32,6 +32,7 @@ class ParentShell extends StatelessWidget {
     final selectedIndex = _selectedIndex(location);
 
     return Scaffold(
+      restorationId: 'parent_shell',
       body: child,
       bottomNavigationBar: NavigationBar(
         selectedIndex: selectedIndex,

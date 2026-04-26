@@ -30,6 +30,7 @@ class SecurityShell extends StatelessWidget {
     final selectedIndex = _selectedIndex(location);
 
     return Scaffold(
+      restorationId: 'security_shell',
       body: child,
       bottomNavigationBar: NavigationBar(
         selectedIndex: selectedIndex,

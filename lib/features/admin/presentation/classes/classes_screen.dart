@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile_app/core/widgets/app_empty_state.dart';
 import 'package:mobile_app/core/widgets/app_error_state.dart';
@@ -7,6 +8,7 @@ import 'package:mobile_app/core/widgets/confirmation_dialog.dart';
 import 'package:mobile_app/features/admin/data/admin_views_repository.dart';
 import 'package:mobile_app/features/admin/data/class_repository.dart';
 import 'package:mobile_app/features/admin/domain/class_model.dart';
+import 'package:mobile_app/core/utils/error_message.dart';
 import 'package:mobile_app/features/admin/providers/class_provider.dart';
 
 class ClassesScreen extends ConsumerWidget {
@@ -26,6 +28,7 @@ class ClassesScreen extends ConsumerWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
+            tooltip: 'Refresh',
             onPressed: () => ref.invalidate(classesProvider),
           ),
         ],
@@ -59,7 +62,7 @@ class ClassesScreen extends ConsumerWidget {
               return Dismissible(
                 key: ValueKey(c.id),
                 direction: DismissDirection.endToStart,
-                confirmDismiss: (_) => _confirmDelete(context),
+                confirmDismiss: (_) { HapticFeedback.mediumImpact(); return _confirmDelete(context); },
                 onDismissed: (_) => _delete(context, ref, c.id),
                 background: Container(
                   alignment: Alignment.centerRight,
@@ -92,6 +95,7 @@ class ClassesScreen extends ConsumerWidget {
                     ),
                     trailing: IconButton(
                       icon: const Icon(Icons.edit_outlined),
+                      tooltip: 'Edit',
                       onPressed: () => _showClassSheet(context, ref, c),
                     ),
                   ),
@@ -120,7 +124,7 @@ class ClassesScreen extends ConsumerWidget {
       ref.invalidate(classesProvider);
     } catch (e) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(friendlyMessage(e))));
       ref.invalidate(classesProvider);
     }
   }
@@ -202,7 +206,7 @@ class _ClassFormSheetState extends ConsumerState<_ClassFormSheet> {
       Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(friendlyMessage(e))));
     } finally {
       if (mounted) setState(() => _saving = false);
     }

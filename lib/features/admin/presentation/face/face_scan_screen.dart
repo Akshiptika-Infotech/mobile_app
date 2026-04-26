@@ -154,6 +154,7 @@ class _FaceScanScreenState extends ConsumerState<FaceScanScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.flip_camera_ios_rounded),
+            tooltip: 'Switch camera',
             onPressed: _toggleCamera,
           ),
         ],

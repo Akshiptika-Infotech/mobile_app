@@ -87,6 +87,7 @@ class _StudentsListScreenState extends ConsumerState<StudentsListScreen>
                           if (_searchController.text.isNotEmpty)
                             IconButton(
                               icon: const Icon(Icons.clear),
+                              tooltip: 'Clear',
                               onPressed: () {
                                 _searchController.clear();
                                 _onSearchChanged('');

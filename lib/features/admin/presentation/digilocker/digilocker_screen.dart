@@ -92,6 +92,7 @@ class _DigiLockerScreenState extends ConsumerState<DigiLockerScreen> {
                             Text(pin.pin, style: const TextStyle(fontWeight: FontWeight.bold)),
                             IconButton(
                               icon: const Icon(Icons.copy_outlined),
+                              tooltip: 'Copy',
                               onPressed: () async {
                                 await Clipboard.setData(ClipboardData(text: pin.pin));
                                 if (!context.mounted) return;

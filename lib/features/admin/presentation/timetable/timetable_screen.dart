@@ -6,6 +6,7 @@ import 'package:mobile_app/core/widgets/app_skeleton_loader.dart';
 import 'package:mobile_app/core/widgets/confirmation_dialog.dart';
 import 'package:mobile_app/features/admin/data/timetable_repository.dart';
 import 'package:mobile_app/features/admin/domain/timetable_model.dart';
+import 'package:mobile_app/core/utils/error_message.dart';
 import 'package:mobile_app/features/admin/providers/timetable_provider.dart';
 
 class TimetableScreen extends ConsumerStatefulWidget {
@@ -22,6 +23,18 @@ class _TimetableScreenState extends ConsumerState<TimetableScreen> {
   String? _selectedClass;
   String? _selectedSection;
 
+  void _setDefaultSelection(List<String> comboList) {
+    if (_selectedClass != null || comboList.isEmpty) return;
+    final parts = comboList.first.split('-');
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      setState(() {
+        _selectedClass = parts[0];
+        _selectedSection = parts.length > 1 ? parts[1] : '';
+      });
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
@@ -36,6 +49,7 @@ class _TimetableScreenState extends ConsumerState<TimetableScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
+            tooltip: 'Refresh',
             onPressed: () => ref.invalidate(adminTimetableProvider),
           ),
         ],
@@ -61,12 +75,8 @@ class _TimetableScreenState extends ConsumerState<TimetableScreen> {
           }
           final comboList = combos.toList()..sort();
 
-          // Set default selection
-          if (_selectedClass == null && comboList.isNotEmpty) {
-            final parts = comboList.first.split('-');
-            _selectedClass = parts[0];
-            _selectedSection = parts.length > 1 ? parts[1] : '';
-          }
+          // Set default selection after build completes (never mutate state inside build).
+          _setDefaultSelection(comboList);
 
           final filtered = periods.where((p) {
             return p.className == _selectedClass && p.section == (_selectedSection ?? '');
@@ -144,7 +154,7 @@ class _TimetableScreenState extends ConsumerState<TimetableScreen> {
       ref.invalidate(adminTimetableProvider);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(friendlyMessage(e))));
     }
   }
 
@@ -419,7 +429,7 @@ class _PeriodFormSheetState extends State<_PeriodFormSheet> {
       Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(friendlyMessage(e))));
     } finally {
       if (mounted) setState(() => _saving = false);
     }

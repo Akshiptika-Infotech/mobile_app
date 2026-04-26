@@ -65,10 +65,12 @@ class LeaveRequestsScreen extends ConsumerWidget {
                           children: [
                             IconButton(
                               onPressed: () => _update(ref, id, 'approved'),
+                              tooltip: 'Approve',
                               icon: Icon(Icons.check_circle_outline, color: cs.primary),
                             ),
                             IconButton(
                               onPressed: () => _update(ref, id, 'rejected'),
+                              tooltip: 'Reject',
                               icon: Icon(Icons.cancel_outlined, color: cs.error),
                             ),
                           ],

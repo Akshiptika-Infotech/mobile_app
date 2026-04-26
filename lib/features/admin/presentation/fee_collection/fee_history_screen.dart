@@ -59,6 +59,7 @@ class _FeeHistoryScreenState extends ConsumerState<FeeHistoryScreen> {
                 suffixIcon: _searchCtrl.text.isNotEmpty
                     ? IconButton(
                         icon: const Icon(Icons.clear),
+                        tooltip: 'Clear',
                         onPressed: () {
                           _searchCtrl.clear();
                           setState(() {});
