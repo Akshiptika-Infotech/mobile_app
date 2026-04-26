@@ -20,17 +20,24 @@ class CertificateRepository {
         .toList();
   }
 
+  /// Issues a certificate via `POST /api/admin/certificates`. The backend
+  /// schema requires `{type, recipientType, recipientId, data, templateId?}`.
   Future<CertificateModel> issueCertificate({
     required String studentId,
     required String type,
     required String date,
+    String recipientType = 'STUDENT',
+    Map<String, dynamic>? extraData,
+    String? templateId,
   }) async {
     final response = await _dio.post(
-      '/api/admin/certificates/issue',
+      '/api/admin/certificates',
       data: {
-        'studentId': studentId,
         'type': type,
-        'date': date,
+        'recipientType': recipientType,
+        'recipientId': studentId,
+        'data': {'date': date, ...?extraData},
+        if (templateId != null) 'templateId': templateId,
       },
     );
     final data = response.data;

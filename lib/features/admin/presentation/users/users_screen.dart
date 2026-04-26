@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile_app/features/admin/domain/user_staff_model.dart';
+import 'package:mobile_app/core/utils/error_message.dart';
 import 'package:mobile_app/features/admin/providers/staff_provider.dart';
 
 class UsersScreen extends ConsumerWidget {
@@ -112,6 +114,7 @@ class _UsersBodyState extends ConsumerState<_UsersBody> {
                   suffixIcon: _searchCtrl.text.isNotEmpty
                       ? IconButton(
                           icon: const Icon(Icons.clear),
+                          tooltip: 'Clear',
                           onPressed: () {
                             _searchCtrl.clear();
                             setState(() {});
@@ -215,7 +218,8 @@ class _StaffTile extends ConsumerWidget {
         child: Icon(Icons.delete_outline, color: cs.onErrorContainer),
       ),
       confirmDismiss: (_) async {
-        return await showDialog<bool>(
+        HapticFeedback.mediumImpact();
+        final confirmed = await showDialog<bool>(
           context: context,
           builder: (ctx) => AlertDialog(
             title: const Text('Delete Staff'),
@@ -226,17 +230,25 @@ class _StaffTile extends ConsumerWidget {
                 child: const Text('Cancel'),
               ),
               FilledButton(
-                style: FilledButton.styleFrom(
-                    backgroundColor: cs.error),
+                style: FilledButton.styleFrom(backgroundColor: cs.error),
                 onPressed: () => Navigator.pop(ctx, true),
                 child: const Text('Delete'),
               ),
             ],
           ),
         );
-      },
-      onDismissed: (_) {
-        ref.read(staffNotifierProvider.notifier).delete(user.id);
+        if (confirmed != true) return false;
+        try {
+          await ref.read(staffNotifierProvider.notifier).delete(user.id);
+          return true;
+        } catch (e) {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Delete failed: ${e.toString()}')),
+            );
+          }
+          return false;
+        }
       },
       child: Card(
         elevation: 0,
@@ -292,15 +304,27 @@ class _StaffTile extends ConsumerWidget {
             child: const Text('Cancel'),
           ),
           FilledButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(ctx);
-              ref
-                  .read(staffNotifierProvider.notifier)
-                  .resetPassword(user.id);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                    content: Text('Password reset initiated.')),
-              );
+              try {
+                final newPwd = await ref
+                    .read(staffNotifierProvider.notifier)
+                    .resetPassword(user.id);
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Password reset to "$newPwd" — share with the user.'),
+                      duration: const Duration(seconds: 6),
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Reset failed: ${e.toString()}')),
+                  );
+                }
+              }
             },
             child: const Text('Reset'),
           ),
@@ -399,8 +423,13 @@ class _StaffFormSheetState extends ConsumerState<_StaffFormSheet> {
                 decoration: const InputDecoration(
                     labelText: 'Email', border: OutlineInputBorder()),
                 keyboardType: TextInputType.emailAddress,
-                validator: (v) =>
-                    v == null || v.isEmpty ? 'Required' : null,
+                validator: (v) {
+                  if (v == null || v.trim().isEmpty) return 'Required';
+                  if (!RegExp(r'^[\w.+-]+@[\w-]+\.[\w.]{2,}$').hasMatch(v.trim())) {
+                    return 'Enter a valid email address';
+                  }
+                  return null;
+                },
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
@@ -462,7 +491,7 @@ class _StaffFormSheetState extends ConsumerState<_StaffFormSheet> {
       if (mounted) {
         setState(() => _isSubmitting = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString())),
+          SnackBar(content: Text(friendlyMessage(e))),
         );
       }
     }

@@ -20,8 +20,8 @@ class AuthRepository {
     try {
       // Step 1: Obtain CSRF token required by NextAuth.
       final csrfResponse = await _dio.get('/api/auth/csrf');
-      final csrfToken =
-          (csrfResponse.data as Map<String, dynamic>)['csrfToken'] as String?;
+      final csrfData = csrfResponse.data as Map<String, dynamic>?;
+      final csrfToken = csrfData?['csrfToken'] as String?;
 
       // Step 2: POST credentials.
       await _dio.post(
@@ -65,13 +65,17 @@ class AuthRepository {
   }
 
   /// Changes the password for the currently authenticated user.
+  ///
+  /// The backend exposes a role-specific PATCH endpoint
+  /// (`/api/{role}/profile`) that accepts `{currentPassword, newPassword}`.
   Future<void> changePassword({
+    required String role,
     required String currentPassword,
     required String newPassword,
   }) async {
     try {
-      await _dio.post(
-        '/api/profile/change-password',
+      await _dio.patch(
+        _profilePathForRole(role),
         data: {
           'currentPassword': currentPassword,
           'newPassword': newPassword,
@@ -82,13 +86,32 @@ class AuthRepository {
     }
   }
 
+  /// Maps a session role to its backend profile endpoint.
+  static String _profilePathForRole(String role) {
+    switch (role) {
+      case 'DRIVER':
+        return '/api/driver/profile';
+      case 'PARENT':
+        return '/api/parent/profile';
+      case 'STUDENT':
+        return '/api/student/profile';
+      case 'SECURITY_GUARD':
+        return '/api/security/profile';
+      case 'RECEPTIONIST':
+        return '/api/reception/profile';
+      // SUPER_ADMIN / ADMIN / CLERK / TEACHER / WEB_ADMIN all share the admin profile
+      default:
+        return '/api/admin/profile';
+    }
+  }
+
   /// Signs out the current user.
   Future<void> logout() async {
     try {
       // Obtain CSRF token first.
       final csrfResponse = await _dio.get('/api/auth/csrf');
-      final csrfToken =
-          (csrfResponse.data as Map<String, dynamic>)['csrfToken'] as String?;
+      final csrfData = csrfResponse.data as Map<String, dynamic>?;
+      final csrfToken = csrfData?['csrfToken'] as String?;
 
       await _dio.post(
         '/api/auth/signout',

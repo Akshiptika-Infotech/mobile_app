@@ -23,10 +23,10 @@ class ReportRepository {
     String? from,
     String? to,
   }) async {
+    // Backend exposes one route per report type at /api/admin/reports/{type}.
     final response = await _dio.get(
-      '/api/admin/reports',
+      '/api/admin/reports/$type',
       queryParameters: {
-        'type': type,
         if (from != null && from.isNotEmpty) 'from': from,
         if (to != null && to.isNotEmpty) 'to': to,
       },

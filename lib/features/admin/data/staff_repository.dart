@@ -30,8 +30,16 @@ class StaffRepository {
     await _dio.delete('/api/admin/users/$id');
   }
 
-  Future<void> resetPassword(String id) async {
-    await _dio.post('/api/admin/users/$id/reset-password');
+  /// Resets a staff/user password to a default value and returns the
+  /// plain-text password so the admin can share it. The backend has no
+  /// dedicated reset endpoint — it accepts `{password}` on PATCH and
+  /// hashes it server-side.
+  Future<String> resetPassword(String id, {String? newPassword}) async {
+    final pwd = newPassword?.trim().isNotEmpty == true
+        ? newPassword!.trim()
+        : 'changeme123';
+    await _dio.patch('/api/admin/users/$id', data: {'password': pwd});
+    return pwd;
   }
 
   static List<dynamic> _extractList(dynamic data) {

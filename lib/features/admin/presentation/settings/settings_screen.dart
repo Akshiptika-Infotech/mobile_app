@@ -5,6 +5,7 @@ import 'package:mobile_app/core/widgets/app_error_state.dart';
 import 'package:mobile_app/core/widgets/app_skeleton_loader.dart';
 import 'package:mobile_app/features/admin/data/admin_views_repository.dart';
 import 'package:mobile_app/features/admin/data/settings_repository.dart';
+import 'package:mobile_app/core/utils/error_message.dart';
 import 'package:mobile_app/features/admin/providers/settings_provider.dart';
 
 // ── Providers for extra tabs ──────────────────────────────────────────────────
@@ -96,7 +97,7 @@ class _SchoolInfoTabState extends ConsumerState<_SchoolInfoTab> {
           .showSnackBar(const SnackBar(content: Text('Settings saved')));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(friendlyMessage(e))));
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -263,16 +264,16 @@ class _SignaturesTab extends ConsumerWidget {
                 subtitle: Text(role),
                 trailing: IconButton(
                   onPressed: () async {
-                    final id = (sig['id'] ?? '').toString();
-                    if (id.isEmpty) return;
                     try {
+                      // Backend exposes a single per-user signature row at
+                      // /api/admin/settings/signatures — DELETE removes it.
                       await ref
                           .read(adminViewsRepositoryProvider)
-                          .patch('/api/admin/settings/signatures/$id/delete', {});
+                          .delete('/api/admin/settings/signatures');
                       ref.invalidate(_signaturesProvider);
                     } catch (e) {
                       if (!context.mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(friendlyMessage(e))));
                     }
                   },
                   icon: Icon(Icons.delete_outline, color: cs.error),
@@ -332,7 +333,7 @@ class _AddSignatorySheetState extends ConsumerState<_AddSignatorySheet> {
       Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(friendlyMessage(e))));
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -432,6 +433,7 @@ class _ShiftsTab extends ConsumerWidget {
                           trailing: IconButton(
                             onPressed: () => _showEditSheet(context, ref, shift),
                             icon: const Icon(Icons.edit_outlined),
+                            tooltip: 'Edit',
                           ),
                         ),
                       );
@@ -528,7 +530,7 @@ class _ShiftFormSheetState extends ConsumerState<_ShiftFormSheet> {
       Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(friendlyMessage(e))));
     } finally {
       if (mounted) setState(() => _saving = false);
     }

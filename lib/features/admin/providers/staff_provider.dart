@@ -50,18 +50,13 @@ class StaffNotifier extends StateNotifier<AsyncValue<List<StaffUser>>> {
   }
 
   Future<void> delete(String id) async {
-    try {
-      await _repo.deleteUser(id);
-      if (!mounted) return;
-      await _load();
-    } catch (e, st) {
-      if (!mounted) return;
-      state = AsyncValue.error(e, st);
-    }
+    await _repo.deleteUser(id);
+    if (!mounted) return;
+    await _load();
   }
 
-  Future<void> resetPassword(String id) async {
-    await _repo.resetPassword(id);
+  Future<String> resetPassword(String id) async {
+    return _repo.resetPassword(id);
   }
 }
 

@@ -32,9 +32,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   Future<void> _submitChangePassword() async {
     if (!_formKey.currentState!.validate()) return;
+    final user = ref.read(currentUserProvider);
+    if (user == null) return;
     setState(() => _isSubmitting = true);
     try {
       await ref.read(authRepositoryProvider).changePassword(
+            role: user.role,
             currentPassword: _currentPasswordController.text,
             newPassword: _newPasswordController.text,
           );

@@ -7,9 +7,36 @@ class ReceptionRepository {
   const ReceptionRepository(this._dio);
   final Dio _dio;
 
+  /// No `/api/reception/dashboard` route exists on the backend — assemble
+  /// the four counters from the underlying list endpoints in parallel.
   Future<ReceptionDashboard> fetchDashboard() async {
-    final res = await _dio.get('/api/reception/dashboard');
-    return ReceptionDashboard.fromJson(res.data as Map<String, dynamic>);
+    final today = DateTime.now().toIso8601String().split('T').first;
+    final results = await Future.wait([
+      _dio.get('/api/reception/appointments', queryParameters: {'date': today}),
+      _dio.get('/api/reception/gate-passes',  queryParameters: {'status': 'PENDING'}),
+      _dio.get('/api/reception/call-log',     queryParameters: {'date': today}),
+      _dio.get('/api/reception/late-arrivals', queryParameters: {'date': today}),
+    ]);
+    return ReceptionDashboard(
+      todayAppointments: _count(results[0].data),
+      pendingPasses:     _count(results[1].data),
+      callsLogged:       _count(results[2].data),
+      lateArrivals:      _count(results[3].data),
+    );
+  }
+
+  static int _count(dynamic data) {
+    if (data is List) return data.length;
+    if (data is Map<String, dynamic>) {
+      for (final key in const ['data', 'items', 'rows', 'results',
+          'visitors', 'appointments', 'passes', 'calls', 'lateArrivals',
+          'late_arrivals']) {
+        if (data[key] is List) return (data[key] as List).length;
+      }
+      if (data['total'] is num) return (data['total'] as num).toInt();
+      if (data['count'] is num) return (data['count'] as num).toInt();
+    }
+    return 0;
   }
 
   // ── Visitors ───────────────────────────────────────────────────────────────

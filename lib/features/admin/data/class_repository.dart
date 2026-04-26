@@ -55,13 +55,23 @@ class ClassRepository {
     await _dio.patch('/api/admin/academic-years/$id');
   }
 
+  /// Returns every section in the school, flattened from the classes
+  /// endpoint (the backend has no dedicated `/api/admin/sections` route —
+  /// each class includes its sections inline).
   Future<List<Section>> fetchSections() async {
-    final res = await _dio.get('/api/admin/sections');
-    final data = res.data;
-    final list = data is Map ? (data['sections'] ?? <dynamic>[]) : data;
-    return (list as List)
-        .map((e) => Section.fromJson(e as Map<String, dynamic>))
-        .toList();
+    final res = await _dio.get('/api/admin/classes');
+    final classes = _extractList(res.data);
+    final sections = <Section>[];
+    for (final c in classes) {
+      final cls = c as Map<String, dynamic>;
+      final raw = cls['sections'];
+      if (raw is List) {
+        for (final s in raw) {
+          sections.add(Section.fromJson(s as Map<String, dynamic>));
+        }
+      }
+    }
+    return sections;
   }
 
   static List<dynamic> _extractList(dynamic data) {

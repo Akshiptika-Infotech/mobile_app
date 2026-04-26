@@ -20,6 +20,10 @@ class AdminViewsRepository {
     await _dio.post(path, data: data);
   }
 
+  Future<void> delete(String path) async {
+    await _dio.delete(path);
+  }
+
   static List<dynamic> _extractList(dynamic data) {
     if (data is List) return data;
     if (data is Map<String, dynamic>) {
