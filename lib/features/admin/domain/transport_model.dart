@@ -3,6 +3,9 @@ class TransportRoute {
   final String name;
   final String vehicleNumber;
   final String driverName;
+  final String driverContact;
+  final String conductorName;
+  final String conductorContact;
   final List<TransportStop> stoppages;
 
   const TransportRoute({
@@ -10,6 +13,9 @@ class TransportRoute {
     required this.name,
     required this.vehicleNumber,
     required this.driverName,
+    required this.driverContact,
+    required this.conductorName,
+    required this.conductorContact,
     required this.stoppages,
   });
 
@@ -18,6 +24,9 @@ class TransportRoute {
         name: json['name']?.toString() ?? '',
         vehicleNumber: json['vehicleNumber']?.toString() ?? '',
         driverName: json['driverName']?.toString() ?? '',
+        driverContact: json['driverContact']?.toString() ?? '',
+        conductorName: json['conductorName']?.toString() ?? '',
+        conductorContact: json['conductorContact']?.toString() ?? '',
         stoppages: (json['stoppages'] as List<dynamic>?)
                 ?.map((e) => TransportStop.fromJson(e as Map<String, dynamic>))
                 .toList() ??

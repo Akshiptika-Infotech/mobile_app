@@ -21,6 +21,9 @@ class _TransportRoutesScreenState extends ConsumerState<TransportRoutesScreen> {
   final _nameCtrl = TextEditingController();
   final _vehicleCtrl = TextEditingController();
   final _driverCtrl = TextEditingController();
+  final _driverContactCtrl = TextEditingController();
+  final _conductorCtrl = TextEditingController();
+  final _conductorContactCtrl = TextEditingController();
   bool _saving = false;
 
   @override
@@ -28,6 +31,9 @@ class _TransportRoutesScreenState extends ConsumerState<TransportRoutesScreen> {
     _nameCtrl.dispose();
     _vehicleCtrl.dispose();
     _driverCtrl.dispose();
+    _driverContactCtrl.dispose();
+    _conductorCtrl.dispose();
+    _conductorContactCtrl.dispose();
     super.dispose();
   }
 
@@ -39,10 +45,16 @@ class _TransportRoutesScreenState extends ConsumerState<TransportRoutesScreen> {
         'name': _nameCtrl.text.trim(),
         'vehicleNumber': _vehicleCtrl.text.trim(),
         'driverName': _driverCtrl.text.trim(),
+        'driverContact': _driverContactCtrl.text.trim(),
+        'conductorName': _conductorCtrl.text.trim(),
+        'conductorContact': _conductorContactCtrl.text.trim(),
       });
       _nameCtrl.clear();
       _vehicleCtrl.clear();
       _driverCtrl.clear();
+      _driverContactCtrl.clear();
+      _conductorCtrl.clear();
+      _conductorContactCtrl.clear();
       ref.invalidate(transportRoutesProvider);
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -57,6 +69,22 @@ class _TransportRoutesScreenState extends ConsumerState<TransportRoutesScreen> {
         confirmLabel: 'Delete',
         isDestructive: true,
       );
+
+  String _subtitleFor(dynamic route) {
+    final parts = <String>[];
+    if (route.vehicleNumber.isNotEmpty) parts.add('Vehicle: ${route.vehicleNumber}');
+    if (route.driverName.isNotEmpty) {
+      parts.add(route.driverContact.isNotEmpty
+          ? 'Driver: ${route.driverName} · ${route.driverContact}'
+          : 'Driver: ${route.driverName}');
+    }
+    if (route.conductorName.isNotEmpty) {
+      parts.add(route.conductorContact.isNotEmpty
+          ? 'Conductor: ${route.conductorName} · ${route.conductorContact}'
+          : 'Conductor: ${route.conductorName}');
+    }
+    return parts.join('  ');
+  }
 
   Future<void> _delete(String id) async {
     try {
@@ -129,7 +157,7 @@ class _TransportRoutesScreenState extends ConsumerState<TransportRoutesScreen> {
                   ),
                   child: ExpansionTile(
                     title: Text(route.name, style: const TextStyle(fontWeight: FontWeight.w600)),
-                    subtitle: Text('Vehicle: ${route.vehicleNumber}  Driver: ${route.driverName}'),
+                    subtitle: Text(_subtitleFor(route)),
                     children: route.stoppages
                         .map(
                           (s) => ListTile(
@@ -155,38 +183,57 @@ class _TransportRoutesScreenState extends ConsumerState<TransportRoutesScreen> {
       isScrollControlled: true,
       builder: (_) => Padding(
         padding: EdgeInsets.fromLTRB(16, 16, 16, MediaQuery.viewInsetsOf(context).bottom + 16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: _nameCtrl,
-              decoration: const InputDecoration(labelText: 'Route Name', border: OutlineInputBorder()),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _vehicleCtrl,
-              decoration: const InputDecoration(labelText: 'Vehicle Number', border: OutlineInputBorder()),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _driverCtrl,
-              decoration: const InputDecoration(labelText: 'Driver Name', border: OutlineInputBorder()),
-            ),
-            const SizedBox(height: 10),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: _saving
-                    ? null
-                    : () async {
-                        await _add();
-                        if (!mounted) return;
-                        Navigator.pop(context);
-                      },
-                child: const Text('Save'),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: _nameCtrl,
+                decoration: const InputDecoration(labelText: 'Route Name', border: OutlineInputBorder()),
               ),
-            ),
-          ],
+              const SizedBox(height: 8),
+              TextField(
+                controller: _vehicleCtrl,
+                decoration: const InputDecoration(labelText: 'Vehicle Number', border: OutlineInputBorder()),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _driverCtrl,
+                decoration: const InputDecoration(labelText: 'Driver Name', border: OutlineInputBorder()),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _driverContactCtrl,
+                keyboardType: TextInputType.phone,
+                decoration: const InputDecoration(labelText: 'Driver Contact', border: OutlineInputBorder()),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _conductorCtrl,
+                decoration: const InputDecoration(labelText: 'Conductor Name', border: OutlineInputBorder()),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _conductorContactCtrl,
+                keyboardType: TextInputType.phone,
+                decoration: const InputDecoration(labelText: 'Conductor Contact', border: OutlineInputBorder()),
+              ),
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: _saving
+                      ? null
+                      : () async {
+                          await _add();
+                          if (!mounted) return;
+                          Navigator.pop(context);
+                        },
+                  child: const Text('Save'),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

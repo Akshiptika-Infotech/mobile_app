@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile_app/features/driver/domain/driver_model.dart';
 import 'package:mobile_app/features/driver/providers/driver_provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class RouteScreen extends ConsumerWidget {
   const RouteScreen({super.key});
@@ -36,6 +37,11 @@ class RouteScreen extends ConsumerWidget {
       ),
     );
   }
+}
+
+Future<void> _dial(String phone) async {
+  final uri = Uri(scheme: 'tel', path: phone);
+  if (await canLaunchUrl(uri)) await launchUrl(uri);
 }
 
 class _RouteView extends StatelessWidget {
@@ -86,18 +92,28 @@ class _RouteView extends StatelessWidget {
                         ]),
                       ],
                       const SizedBox(height: 12),
-                      Row(
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 6,
                         children: [
                           if (route.driverName.isNotEmpty)
                             _InfoChip(
                                 icon: Icons.person_rounded,
                                 label: route.driverName),
-                          if (route.conductorName.isNotEmpty) ...[
-                            const SizedBox(width: 8),
+                          if (route.driverContact.isNotEmpty)
+                            _InfoChip(
+                                icon: Icons.phone_rounded,
+                                label: route.driverContact,
+                                onTap: () => _dial(route.driverContact)),
+                          if (route.conductorName.isNotEmpty)
                             _InfoChip(
                                 icon: Icons.support_agent_rounded,
                                 label: route.conductorName),
-                          ],
+                          if (route.conductorContact.isNotEmpty)
+                            _InfoChip(
+                                icon: Icons.phone_rounded,
+                                label: route.conductorContact,
+                                onTap: () => _dial(route.conductorContact)),
                         ],
                       ),
                     ],
@@ -145,13 +161,14 @@ class _RouteView extends StatelessWidget {
 }
 
 class _InfoChip extends StatelessWidget {
-  const _InfoChip({required this.icon, required this.label});
+  const _InfoChip({required this.icon, required this.label, this.onTap});
   final IconData icon;
   final String label;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final chip = Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.15),
@@ -166,6 +183,12 @@ class _InfoChip extends StatelessWidget {
               style: const TextStyle(color: Colors.white, fontSize: 11)),
         ],
       ),
+    );
+    if (onTap == null) return chip;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: chip,
     );
   }
 }

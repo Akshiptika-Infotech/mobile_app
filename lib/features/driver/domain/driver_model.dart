@@ -111,7 +111,9 @@ class DriverRoute {
     required this.name,
     required this.vehicleNumber,
     required this.driverName,
+    required this.driverContact,
     required this.conductorName,
+    required this.conductorContact,
     required this.stoppages,
   });
 
@@ -119,7 +121,9 @@ class DriverRoute {
   final String name;
   final String vehicleNumber;
   final String driverName;
+  final String driverContact;
   final String conductorName;
+  final String conductorContact;
   final List<Stoppage> stoppages;
 
   factory DriverRoute.fromJson(Map<String, dynamic> json) {
@@ -129,7 +133,9 @@ class DriverRoute {
       name: (json['name'] ?? json['routeName'] ?? json['route_name'] ?? '').toString(),
       vehicleNumber: (json['vehicleNumber'] ?? json['vehicle_number'] ?? '').toString(),
       driverName: (json['driverName'] ?? json['driver_name'] ?? '').toString(),
+      driverContact: (json['driverContact'] ?? json['driver_contact'] ?? '').toString(),
       conductorName: (json['conductorName'] ?? json['conductor_name'] ?? '').toString(),
+      conductorContact: (json['conductorContact'] ?? json['conductor_contact'] ?? '').toString(),
       stoppages: stops
           .map((s) => Stoppage.fromJson(s as Map<String, dynamic>))
           .toList()
@@ -142,7 +148,9 @@ class DriverRoute {
         name: '',
         vehicleNumber: '',
         driverName: '',
+        driverContact: '',
         conductorName: '',
+        conductorContact: '',
         stoppages: [],
       );
 }
