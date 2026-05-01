@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile_app/core/utils/responsive_utils.dart';
+import 'package:mobile_app/core/widgets/dashboard_avatar.dart';
 import 'package:mobile_app/features/auth/providers/auth_provider.dart';
 import 'package:mobile_app/features/web_admin/domain/web_admin_models.dart';
 import 'package:mobile_app/features/web_admin/providers/web_admin_provider.dart';
@@ -55,11 +56,12 @@ class WebAdminDashboardScreen extends ConsumerWidget {
                       padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
                       child: Row(
                         children: [
-                          CircleAvatar(
-                            radius: 20,
+                          DashboardAvatar(
+                            imageUrl: user?.image,
                             backgroundColor:
                                 Colors.white.withValues(alpha: 0.2),
-                            child: const Icon(Icons.web_outlined,
+                            onTap: () => context.go('/web-admin/profile'),
+                            fallback: const Icon(Icons.web_outlined,
                                 color: Colors.white, size: 20),
                           ),
                           const SizedBox(width: 12),

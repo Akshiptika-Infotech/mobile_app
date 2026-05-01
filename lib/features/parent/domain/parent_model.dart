@@ -52,6 +52,7 @@ class ParentReceipt {
     required this.items,
     required this.academicYearName,
     this.isRevoked = false,
+    this.transactionReference,
   });
 
   final String id;
@@ -64,6 +65,7 @@ class ParentReceipt {
   final List<ReceiptItem> items;
   final String academicYearName;
   final bool isRevoked;
+  final String? transactionReference;
 
   double get total => items.fold(0.0, (s, i) => s + i.amount);
 
@@ -94,6 +96,7 @@ class ParentReceipt {
                   ?.toString() ??
               '',
       isRevoked: json['revocation'] != null,
+      transactionReference: json['transactionReference']?.toString(),
     );
   }
 }

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile_app/app_config.dart';
+import 'package:mobile_app/core/widgets/dashboard_avatar.dart';
 import 'package:mobile_app/features/admin/domain/dashboard_model.dart';
 import 'package:mobile_app/features/admin/providers/dashboard_provider.dart';
 import 'package:mobile_app/features/auth/domain/user_model.dart';
@@ -49,6 +50,12 @@ class DashboardScreen extends ConsumerWidget {
                   onPressed: () {},
                 ),
                 IconButton(
+                  icon: const Icon(Icons.account_circle_outlined,
+                      color: Colors.white),
+                  tooltip: 'Profile',
+                  onPressed: () => context.go('/admin/profile'),
+                ),
+                IconButton(
                   icon: const Icon(Icons.logout_outlined, color: Colors.white),
                   tooltip: 'Sign out',
                   onPressed: () async {
@@ -76,23 +83,20 @@ class DashboardScreen extends ConsumerWidget {
                         children: [
                           Row(
                             children: [
-                              Container(
-                                width: 42,
-                                height: 42,
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.2),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Center(
-                                  child: Text(
-                                    user?.name.isNotEmpty == true
-                                        ? user!.name[0].toUpperCase()
-                                        : 'A',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 18,
-                                    ),
+                              DashboardAvatar(
+                                radius: 21,
+                                imageUrl: user?.image,
+                                backgroundColor:
+                                    Colors.white.withValues(alpha: 0.2),
+                                onTap: () => context.go('/admin/profile'),
+                                fallback: Text(
+                                  user?.name.isNotEmpty == true
+                                      ? user!.name[0].toUpperCase()
+                                      : 'A',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 18,
                                   ),
                                 ),
                               ),

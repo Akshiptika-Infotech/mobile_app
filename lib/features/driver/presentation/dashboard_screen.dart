@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile_app/core/utils/responsive_utils.dart';
+import 'package:mobile_app/core/widgets/dashboard_avatar.dart';
 import 'package:mobile_app/features/auth/providers/auth_provider.dart';
 import 'package:mobile_app/features/driver/domain/driver_model.dart';
 import 'package:mobile_app/features/driver/providers/driver_provider.dart';
@@ -31,6 +32,13 @@ class DashboardScreen extends ConsumerWidget {
               elevation: 0,
               actions: [
                 IconButton(
+                  tooltip: 'Profile',
+                  icon: const Icon(Icons.account_circle_outlined,
+                      color: Colors.white),
+                  onPressed: () => context.go('/driver/profile'),
+                ),
+                IconButton(
+                  tooltip: 'Sign out',
                   icon: const Icon(Icons.logout_outlined, color: Colors.white),
                   onPressed: () async {
                     await ref.read(authProvider.notifier).logout();
@@ -57,12 +65,15 @@ class DashboardScreen extends ConsumerWidget {
                         children: [
                           Row(
                             children: [
-                              CircleAvatar(
-                                radius: 20,
+                              DashboardAvatar(
+                                imageUrl: user?.image,
                                 backgroundColor:
                                     Colors.white.withValues(alpha: 0.2),
-                                child: const Icon(Icons.directions_bus_rounded,
-                                    color: Colors.white, size: 20),
+                                onTap: () => context.go('/driver/profile'),
+                                fallback: const Icon(
+                                    Icons.directions_bus_rounded,
+                                    color: Colors.white,
+                                    size: 20),
                               ),
                               const SizedBox(width: 12),
                               Expanded(

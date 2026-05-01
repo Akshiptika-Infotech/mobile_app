@@ -5,6 +5,8 @@ class UserModel {
     required this.email,
     required this.role,
     this.employeeId,
+    this.image,
+    this.expires,
   });
 
   final String id;
@@ -12,18 +14,26 @@ class UserModel {
   final String email;
   final String role;
   final String? employeeId;
+  final String? image;
+
+  /// ISO-8601 expiry timestamp from NextAuth session.
+  final DateTime? expires;
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
-    // NextAuth session shape: { user: { id, name, email, role, employeeId } }
+    // NextAuth session shape: { user: { id, name, email, role, employeeId, image }, expires }
     final user =
         json.containsKey('user') ? json['user'] as Map<String, dynamic> : json;
 
+    final rawImage = user['image']?.toString();
+    final expiresRaw = json['expires']?.toString() ?? user['expires']?.toString();
     return UserModel(
       id: (user['id'] ?? '').toString(),
       name: (user['name'] ?? '').toString(),
       email: (user['email'] ?? '').toString(),
       role: (user['role'] ?? '').toString().toUpperCase(),
       employeeId: user['employeeId']?.toString(),
+      image: (rawImage == null || rawImage.isEmpty) ? null : rawImage,
+      expires: expiresRaw != null ? DateTime.tryParse(expiresRaw) : null,
     );
   }
 
@@ -33,6 +43,8 @@ class UserModel {
         'email': email,
         'role': role,
         if (employeeId != null) 'employeeId': employeeId,
+        if (image != null) 'image': image,
+        if (expires != null) 'expires': expires!.toIso8601String(),
       };
 
   UserModel copyWith({
@@ -41,6 +53,10 @@ class UserModel {
     String? email,
     String? role,
     String? employeeId,
+    String? image,
+    DateTime? expires,
+    bool clearImage = false,
+    bool clearExpires = false,
   }) {
     return UserModel(
       id: id ?? this.id,
@@ -48,6 +64,8 @@ class UserModel {
       email: email ?? this.email,
       role: role ?? this.role,
       employeeId: employeeId ?? this.employeeId,
+      image: clearImage ? null : (image ?? this.image),
+      expires: clearExpires ? null : (expires ?? this.expires),
     );
   }
 

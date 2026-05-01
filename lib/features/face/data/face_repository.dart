@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile_app/core/network/dio_client.dart';
+import 'package:mobile_app/core/network/dio_extensions.dart';
 import 'package:mobile_app/features/face/domain/face_model.dart';
 
 class FaceRepository {
@@ -19,7 +20,9 @@ class FaceRepository {
       if (identifier != null) 'identifier': identifier,
       'embedding': embedding,
     });
-    return FaceRegisterResult.fromJson(r.data as Map<String, dynamic>);
+    return r.parseApiResponse(
+      (data) => FaceRegisterResult.fromJson(data as Map<String, dynamic>),
+    ).data!;
   }
 
   Future<void> deleteFaceRegistration({
@@ -52,7 +55,9 @@ class FaceRepository {
       if (sectionId != null) 'sectionId': sectionId,
       if (academicYearId != null) 'academicYearId': academicYearId,
     });
-    return FaceVerifyResult.fromJson(r.data as Map<String, dynamic>);
+    return r.parseApiResponse(
+      (data) => FaceVerifyResult.fromJson(data as Map<String, dynamic>),
+    ).data!;
   }
 
   Future<FaceEnrollmentList> fetchEnrollmentList({
@@ -69,7 +74,9 @@ class FaceRepository {
       if (academicYearId != null) 'academicYearId': academicYearId,
       if (role != null) 'role': role,
     });
-    return FaceEnrollmentList.fromJson(r.data as Map<String, dynamic>);
+    return r.parseApiResponse(
+      (data) => FaceEnrollmentList.fromJson(data as Map<String, dynamic>),
+    ).data!;
   }
 }
 

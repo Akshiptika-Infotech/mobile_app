@@ -4,6 +4,7 @@ import 'package:dio_cookie_manager/dio_cookie_manager.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile_app/app_config.dart';
+import 'package:uuid/uuid.dart';
 
 /// Provides a configured [Dio] instance scoped to the current [AppConfig].
 final dioClientProvider = Provider<Dio>((ref) {
@@ -75,6 +76,17 @@ Dio buildDioClient(
       ),
     );
   }
+
+  // Request tracing — every request gets a unique X-Request-Id header
+  // so backend logs can trace a single request across retries.
+  dio.interceptors.add(
+    InterceptorsWrapper(
+      onRequest: (options, handler) {
+        options.headers['X-Request-Id'] = const Uuid().v4();
+        handler.next(options);
+      },
+    ),
+  );
 
   // Retry interceptor — retries up to 2 times on network timeouts or 5xx.
   dio.interceptors.add(_RetryInterceptor(dio, maxRetries: 2));

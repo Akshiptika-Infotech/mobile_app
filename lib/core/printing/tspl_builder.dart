@@ -23,15 +23,20 @@ class TsplBuilder {
     double heightMm = 152.4,
     double gapMm = 2.0,
   }) {
-    _buf.writeln('SIZE $widthMm mm,$heightMm mm');
-    _buf.writeln('GAP $gapMm mm,0 mm');
-    _buf.writeln('DIRECTION 1');
-    _buf.writeln('CLS');
+    _writeln('SIZE $widthMm mm,$heightMm mm');
+    _writeln('GAP $gapMm mm,0 mm');
+    _writeln('DIRECTION 1');
+    _writeln('CLS');
   }
 
   final int width;
   final int height;
-  final StringBuffer _buf = StringBuffer();
+  final BytesBuilder _bytes = BytesBuilder(copy: false);
+
+  void _writeln(String s) {
+    _bytes.add(s.codeUnits);
+    _bytes.addByte(0x0A); // \n — TSPL line terminator
+  }
 
   // Built-in font character widths in dots (at xMult=1)
   static const Map<int, int> _fontWidths = {
@@ -63,7 +68,7 @@ class TsplBuilder {
       {int font = 3, int rotation = 0, int xMult = 1, int yMult = 1}) {
     if (data.isEmpty) return this;
     final safe = data.replaceAll('"', "'");
-    _buf.writeln('TEXT $x,$y,"$font",$rotation,$xMult,$yMult,"$safe"');
+    _writeln('TEXT $x,$y,"$font",$rotation,$xMult,$yMult,"$safe"');
     return this;
   }
 
@@ -81,14 +86,33 @@ class TsplBuilder {
 
   /// Draw a rectangle outline from (x1,y1) to (x2,y2).
   TsplBuilder box(int x1, int y1, int x2, int y2, {int thickness = 3}) {
-    _buf.writeln('BOX $x1,$y1,$x2,$y2,$thickness');
+    _writeln('BOX $x1,$y1,$x2,$y2,$thickness');
     return this;
   }
 
   /// Draw a filled rectangle. Width and height are in dots.
   TsplBuilder bar(int x, int y, int w, int h) {
     if (w <= 0 || h <= 0) return this;
-    _buf.writeln('BAR $x,$y,$w,$h');
+    _writeln('BAR $x,$y,$w,$h');
+    return this;
+  }
+
+  // ── Bitmap ───────────────────────────────────────────────────────────────
+
+  /// Print a packed monochrome bitmap.
+  ///
+  /// [data] is MSB-first; each byte is 8 horizontal pixels. A bit value of
+  /// `0` prints black on TSPL printers, `1` leaves the dot unprinted (white).
+  /// [widthBytes] is the number of bytes per row (= ceil(widthPx / 8)) and
+  /// [height] is the number of rows.
+  ///
+  /// [mode]: 0=overwrite, 1=OR, 2=XOR with background.
+  TsplBuilder bitmap(int x, int y, int widthBytes, int height, Uint8List data,
+      {int mode = 0}) {
+    if (widthBytes <= 0 || height <= 0 || data.isEmpty) return this;
+    _bytes.add('BITMAP $x,$y,$widthBytes,$height,$mode,'.codeUnits);
+    _bytes.add(data);
+    _bytes.addByte(0x0A);
     return this;
   }
 
@@ -100,28 +124,30 @@ class TsplBuilder {
   TsplBuilder qrCode(int x, int y, String data,
       {int cellWidth = 5, String ecc = 'M'}) {
     final safe = data.replaceAll('"', '');
-    _buf.writeln('QRCODE $x,$y,$ecc,$cellWidth,A,0,"$safe"');
+    _writeln('QRCODE $x,$y,$ecc,$cellWidth,A,0,"$safe"');
     return this;
   }
 
   /// Print a Code128 barcode.
   TsplBuilder barcode128(int x, int y, String data, {int height = 80}) {
     final safe = data.replaceAll('"', '');
-    _buf.writeln('BARCODE $x,$y,"128",$height,1,0,2,2,"$safe"');
+    _writeln('BARCODE $x,$y,"128",$height,1,0,2,2,"$safe"');
     return this;
   }
 
   // ── Print ─────────────────────────────────────────────────────────────────
 
   TsplBuilder print({int copies = 1}) {
-    _buf.writeln('PRINT $copies,1');
+    _writeln('PRINT $copies,1');
     return this;
   }
 
   // ── Build ─────────────────────────────────────────────────────────────────
 
-  /// Returns the TSPL command string as raw bytes (ASCII).
-  Uint8List build() => Uint8List.fromList(_buf.toString().codeUnits);
+  /// Returns the TSPL command stream as raw bytes.
+  Uint8List build() => _bytes.toBytes();
 
-  String buildString() => _buf.toString();
+  /// Returns the textual portion only (excludes any binary BITMAP payloads).
+  /// Useful for debugging — do NOT send to a printer.
+  String buildString() => String.fromCharCodes(_bytes.toBytes());
 }

@@ -1,0 +1,42 @@
+[
+  {
+    "name": "JMukhisics",
+    "package": "in.jmukhisics.mobile_app",
+    "version": "1.0.4",
+    "versionCode": 5,
+    "status_code": 403,
+    "response": "{\"message\":\"The app is not yet published. Developer tools will be available once the app is active.\",\"data\":\"devTools\",\"status\":false}",
+    "success": false,
+    "timestamp": "2026-05-01T14:34:54Z"
+  },
+  {
+    "name": "SIC School",
+    "package": "in.sicschool.mobile_app",
+    "version": "1.0.4",
+    "versionCode": 5,
+    "status_code": 200,
+    "response": "{\"message\":\"apk uploaded successfully\"}",
+    "success": true,
+    "timestamp": "2026-05-01T14:34:54Z"
+  },
+  {
+    "name": "SchoolFeePro",
+    "package": "in.schoolfeepro.mobile_app",
+    "version": "1.0.4",
+    "versionCode": 5,
+    "status_code": 524,
+    "response": "error code: 524",
+    "success": false,
+    "timestamp": "2026-05-01T14:34:54Z"
+  },
+  {
+    "name": "The Shivalik",
+    "package": "in.theshivalik.mobile_app",
+    "version": "1.0.3",
+    "versionCode": 4,
+    "status_code": 200,
+    "response": "{\"message\":\"apk uploaded successfully\"}",
+    "success": true,
+    "timestamp": "2026-05-01T14:34:54Z"
+  }
+]

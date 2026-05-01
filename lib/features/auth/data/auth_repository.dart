@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile_app/core/network/dio_client.dart';
@@ -52,13 +54,89 @@ class AuthRepository {
     }
   }
 
-  /// Fetches the current NextAuth session.
+  /// Fetches the current NextAuth session and merges in the avatar image
+  /// (which the session payload itself does not include).
   Future<UserModel?> getSession() async {
     try {
       final response = await _dio.get('/api/auth/session');
       final data = response.data as Map<String, dynamic>?;
       if (data == null || data.isEmpty || data['user'] == null) return null;
-      return UserModel.fromJson(data);
+      final user = UserModel.fromJson(data);
+
+      // /api/admin/profile only checks session, not role — works for any user.
+      final image = await _fetchProfileImage();
+      return image == null ? user : user.copyWith(image: image);
+    } on DioException catch (e) {
+      throw AuthException(_extractMessage(e));
+    }
+  }
+
+  /// Lightweight session ping that validates the cookie is still valid.
+  /// Returns the user if the session is active, null if expired (401).
+  /// This endpoint also refreshes the cookie lifetime on the backend.
+  Future<UserModel?> refreshSession() async {
+    try {
+      final response = await _dio.get('/api/auth/session/refresh');
+      final data = response.data as Map<String, dynamic>?;
+      if (data == null || data.isEmpty || data['user'] == null) return null;
+      final user = UserModel.fromJson(data);
+
+      final image = await _fetchProfileImage();
+      return image == null ? user : user.copyWith(image: image);
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 401) return null;
+      throw AuthException(_extractMessage(e));
+    }
+  }
+
+  Future<String?> _fetchProfileImage() async {
+    try {
+      final res = await _dio.get('/api/admin/profile');
+      final data = res.data as Map<String, dynamic>?;
+      final image = data?['image']?.toString();
+      return (image == null || image.isEmpty) ? null : image;
+    } on DioException {
+      return null;
+    }
+  }
+
+  /// Uploads an image file to the shared upload endpoint and returns the
+  /// resulting hosted URL. Used for profile avatars across all roles.
+  Future<String> uploadProfileImage(File file) async {
+    try {
+      final form = FormData.fromMap({
+        'file': await MultipartFile.fromFile(
+          file.path,
+          filename:
+              'avatar_${DateTime.now().millisecondsSinceEpoch}${_extension(file.path)}',
+        ),
+        'folder': 'avatars',
+        'resourceType': 'image',
+      });
+      final res = await _dio.post('/api/admin/upload', data: form);
+      final data = res.data as Map<String, dynamic>?;
+      final url = (data?['url'] ?? data?['path'] ?? '').toString();
+      if (url.isEmpty) {
+        throw const AuthException('Upload failed: empty response.');
+      }
+      return url;
+    } on DioException catch (e) {
+      throw AuthException(_extractMessage(e));
+    }
+  }
+
+  /// Sets the current user's avatar image. Pass `null` to clear it.
+  ///
+  /// `/api/admin/profile` only checks for an authenticated session (not role),
+  /// so this works for every user — admin, clerk, teacher, driver, security
+  /// guard, receptionist, student, and parent all share the same backing
+  /// `User.image` column.
+  Future<void> updateProfileImage(String? imageUrl) async {
+    try {
+      await _dio.patch(
+        '/api/admin/profile',
+        data: {'image': imageUrl ?? ''},
+      );
     } on DioException catch (e) {
       throw AuthException(_extractMessage(e));
     }
@@ -130,6 +208,12 @@ class AuthRepository {
     } on DioException catch (e) {
       throw AuthException(_extractMessage(e));
     }
+  }
+
+  String _extension(String path) {
+    final dot = path.lastIndexOf('.');
+    if (dot < 0 || dot == path.length - 1) return '.jpg';
+    return path.substring(dot).toLowerCase();
   }
 
   String _extractMessage(DioException e) {

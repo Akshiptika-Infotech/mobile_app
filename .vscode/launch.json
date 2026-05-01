@@ -1,0 +1,47 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "jmukhisics (debug)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main_jmukhisics.dart",
+      "args": ["--flavor", "jmukhisics"]
+    },
+    {
+      "name": "sicschool (debug)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main_sicschool.dart",
+      "args": ["--flavor", "sicschool"]
+    },
+    {
+      "name": "schoolfeepro (debug)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main_schoolfeepro.dart",
+      "args": ["--flavor", "schoolfeepro"]
+    },
+    {
+      "name": "theshivalik (debug)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main_theshivalik.dart",
+      "args": ["--flavor", "theshivalik"]
+    },
+    {
+      "name": "jmukhisics (profile)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main_jmukhisics.dart",
+      "args": ["--flavor", "jmukhisics", "--profile"]
+    },
+    {
+      "name": "jmukhisics (release)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main_jmukhisics.dart",
+      "args": ["--flavor", "jmukhisics", "--release"]
+    }
+  ]
+}

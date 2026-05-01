@@ -121,6 +121,32 @@ class ParentRepository {
     );
   }
 
+  /// Polls for the receipt after a successful payment.
+  /// The webhook creates FeeCollections asynchronously; this gives it
+  /// up to [timeout] to appear before returning null.
+  Future<ParentReceipt?> pollForReceipt({
+    required String orderId,
+    String? studentId,
+    Duration timeout = const Duration(seconds: 30),
+    Duration interval = const Duration(seconds: 3),
+  }) async {
+    final end = DateTime.now().add(timeout);
+    while (DateTime.now().isBefore(end)) {
+      await Future<void>.delayed(interval);
+      try {
+        final receipts = await fetchReceipts(studentId: studentId, page: 1);
+        for (final receipt in receipts) {
+          if (receipt.transactionReference?.contains(orderId) ?? false) {
+            return receipt;
+          }
+        }
+      } catch (_) {
+        // Ignore polling errors and retry.
+      }
+    }
+    return null;
+  }
+
   static List<dynamic> _extractList(dynamic data) {
     if (data is List) return data;
     if (data is Map<String, dynamic>) {

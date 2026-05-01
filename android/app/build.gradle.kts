@@ -78,32 +78,32 @@ android {
         create("jmukhisics") {
             dimension     = "app"
             applicationId = "in.jmukhisics.mobile_app"
-            versionCode   = 4
-            versionName   = "1.0.3"
+            versionCode   = 5
+            versionName   = "1.0.4"
             resValue("string", "app_name", "JMukhisics")
             signingConfig = signingConfigs.getByName("jmukhisics")
         }
         create("sicschool") {
             dimension     = "app"
             applicationId = "in.sicschool.mobile_app"
-            versionCode   = 4
-            versionName   = "1.0.3"
+            versionCode   = 5
+            versionName   = "1.0.4"
             resValue("string", "app_name", "SIC School")
             signingConfig = signingConfigs.getByName("sicschool")
         }
         create("schoolfeepro") {
             dimension     = "app"
             applicationId = "in.schoolfeepro.mobile_app"
-            versionCode   = 4
-            versionName   = "1.0.3"
+            versionCode   = 6
+            versionName   = "1.0.5"
             resValue("string", "app_name", "SchoolFeePro")
             signingConfig = signingConfigs.getByName("schoolfeepro")
         }
         create("theshivalik") {
             dimension     = "app"
             applicationId = "in.theshivalik.mobile_app"
-            versionCode   = 3
-            versionName   = "1.0.2"
+            versionCode   = 6
+            versionName   = "1.0.5"
             resValue("string", "app_name", "The Shivalik")
             signingConfig = signingConfigs.getByName("theshivalik")
         }

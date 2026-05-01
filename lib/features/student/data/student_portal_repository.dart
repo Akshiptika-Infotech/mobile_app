@@ -77,6 +77,31 @@ class StudentPortalRepository {
       },
     );
   }
+
+  /// Polls for the receipt after a successful payment.
+  /// The webhook creates FeeCollections asynchronously; this gives it
+  /// up to [timeout] to appear before returning null.
+  Future<StudentReceipt?> pollForReceipt({
+    required String orderId,
+    Duration timeout = const Duration(seconds: 30),
+    Duration interval = const Duration(seconds: 3),
+  }) async {
+    final end = DateTime.now().add(timeout);
+    while (DateTime.now().isBefore(end)) {
+      await Future<void>.delayed(interval);
+      try {
+        final receipts = await fetchReceipts(page: 1);
+        for (final receipt in receipts) {
+          if (receipt.transactionReference?.contains(orderId) ?? false) {
+            return receipt;
+          }
+        }
+      } catch (_) {
+        // Ignore polling errors and retry.
+      }
+    }
+    return null;
+  }
 }
 
 final studentPortalRepositoryProvider =

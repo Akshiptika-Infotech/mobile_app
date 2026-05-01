@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile_app/core/utils/responsive_utils.dart';
+import 'package:mobile_app/core/widgets/dashboard_avatar.dart';
 import 'package:mobile_app/features/auth/providers/auth_provider.dart';
 import 'package:mobile_app/features/security/domain/security_model.dart';
 import 'package:mobile_app/features/security/providers/security_provider.dart';
@@ -31,6 +32,13 @@ class DashboardScreen extends ConsumerWidget {
               elevation: 0,
               actions: [
                 IconButton(
+                  tooltip: 'Profile',
+                  icon: const Icon(Icons.account_circle_outlined,
+                      color: Colors.white),
+                  onPressed: () => context.go('/security/profile'),
+                ),
+                IconButton(
+                  tooltip: 'Sign out',
                   icon: const Icon(Icons.logout_outlined, color: Colors.white),
                   onPressed: () async {
                     await ref.read(authProvider.notifier).logout();
@@ -53,10 +61,12 @@ class DashboardScreen extends ConsumerWidget {
                       padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
                       child: Row(
                         children: [
-                          CircleAvatar(
-                            radius: 20,
-                            backgroundColor: Colors.white.withValues(alpha: 0.2),
-                            child: const Icon(Icons.security_rounded,
+                          DashboardAvatar(
+                            imageUrl: user?.image,
+                            backgroundColor:
+                                Colors.white.withValues(alpha: 0.2),
+                            onTap: () => context.go('/security/profile'),
+                            fallback: const Icon(Icons.security_rounded,
                                 color: Colors.white, size: 20),
                           ),
                           const SizedBox(width: 12),

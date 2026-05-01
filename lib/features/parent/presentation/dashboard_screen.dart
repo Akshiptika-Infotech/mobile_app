@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile_app/core/widgets/dashboard_avatar.dart';
 import 'package:mobile_app/features/auth/providers/auth_provider.dart';
 import 'package:mobile_app/features/parent/domain/parent_model.dart';
 import 'package:mobile_app/features/parent/providers/parent_provider.dart';
@@ -39,6 +40,24 @@ class DashboardScreen extends ConsumerWidget {
                     children: [
                       Row(
                         children: [
+                          DashboardAvatar(
+                            radius: 22,
+                            imageUrl: user?.image,
+                            backgroundColor:
+                                Colors.white.withValues(alpha: 0.2),
+                            onTap: () => context.go('/parent/profile'),
+                            fallback: Text(
+                              user?.name.isNotEmpty == true
+                                  ? user!.name[0].toUpperCase()
+                                  : 'P',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,

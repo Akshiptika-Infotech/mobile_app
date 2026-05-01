@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -6,6 +7,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 
 import 'package:mobile_app/app_config.dart';
+import 'package:mobile_app/core/imaging/sketchify.dart';
 import 'package:mobile_app/core/printing/tspl_builder.dart';
 import 'package:mobile_app/core/printing/usb_printer_service.dart';
 import 'package:mobile_app/features/security/domain/security_model.dart';
@@ -23,6 +25,11 @@ import 'package:mobile_app/features/security/domain/security_model.dart';
 /// or the send fails (so the caller can show a specific error).
 Future<void> printVisitorPass(BuildContext context, Visitor visitor) async {
   final config = AppConfigScope.of(context);
+
+  // Pre-fetch the visitor photo and convert it to a printable pencil-sketch.
+  // Done once and reused for both the TSPL and PDF paths so the user only
+  // pays the network/processing cost once.
+  final sketch = await _fetchSketch(visitor.imagePath);
 
   // ── 1. Try direct USB ZPL print ──────────────────────────────────────────
   UsbPrinterDevice? device;
@@ -43,7 +50,7 @@ Future<void> printVisitorPass(BuildContext context, Visitor visitor) async {
       throw UsbPrinterException.noPermission();
     }
 
-    final tsplBytes = _buildTsplPass(visitor, config.appName);
+    final tsplBytes = _buildTsplPass(visitor, config.appName, sketch);
     await UsbPrinterService.instance.printBytes(permitted, tsplBytes);
     return; // ✅ Printed directly — no dialog shown
   }
@@ -52,7 +59,7 @@ Future<void> printVisitorPass(BuildContext context, Visitor visitor) async {
   // Only reached when no USB printer is detected at all.
   if (!context.mounted) return;
 
-  final pdfBytes = await _buildPassDoc(visitor, config.appName);
+  final pdfBytes = await _buildPassDoc(visitor, config.appName, sketch);
   const format = PdfPageFormat(
     4 * PdfPageFormat.inch,
     6 * PdfPageFormat.inch,
@@ -69,6 +76,30 @@ Future<void> printVisitorPass(BuildContext context, Visitor visitor) async {
   );
 }
 
+// ── Photo → sketch helper ─────────────────────────────────────────────────────
+
+Future<Sketch?> _fetchSketch(String? imageUrl) async {
+  if (imageUrl == null || imageUrl.isEmpty) return null;
+  try {
+    final uri = Uri.parse(imageUrl);
+    final client = HttpClient()..connectionTimeout = const Duration(seconds: 8);
+    final req = await client.getUrl(uri);
+    final res = await req.close();
+    if (res.statusCode != 200) {
+      client.close(force: true);
+      return null;
+    }
+    final builder = BytesBuilder(copy: false);
+    await for (final chunk in res) {
+      builder.add(chunk);
+    }
+    client.close(force: true);
+    return sketchify(builder.toBytes(), targetSize: 192);
+  } catch (_) {
+    return null;
+  }
+}
+
 // ── TSPL label for Helett H30C Lite (203 DPI, 4×6 inch = 812×1218 dots) ─────
 //
 // Layout (fixed positions for consistent output):
@@ -81,7 +112,7 @@ Future<void> printVisitorPass(BuildContext context, Visitor visitor) async {
 //   [fixed 720] QR code (cellWidth=11, ~270 dots) + ID beside it
 //   [1158]    footer divider + text
 
-Uint8List _buildTsplPass(Visitor visitor, String schoolName) {
+Uint8List _buildTsplPass(Visitor visitor, String schoolName, Sketch? sketch) {
   const W = 812;
   const H = 1218;
   const m = 10; // margin
@@ -158,7 +189,7 @@ Uint8List _buildTsplPass(Visitor visitor, String schoolName) {
   // ── Divider above QR section ──────────────────────────────────────────────
   b.bar(m, y + 5, innerW, 2);
 
-  // ── QR code (fixed at y=730) + Visitor ID beside it ───────────────────────
+  // ── QR code (fixed at y=730) + Visitor ID + face sketch ───────────────────
   // cellWidth=11 → ~25 modules × 11 = 275 dots square (good scan size)
   const qrY = 730;
   const qrX = m + 15;
@@ -171,6 +202,17 @@ Uint8List _buildTsplPass(Visitor visitor, String schoolName) {
   b.text(idX, qrY + 70, 'ID', font: 3);
   b.text(idX, qrY + 115, '#$code', font: 4);
 
+  // Pencil-sketch portrait, vertically centred against the QR.
+  if (sketch != null) {
+    final sx = W - m - 15 - sketch.tsplWidthPx;
+    final sy = qrY + (qrSize - sketch.tsplHeight) ~/ 2;
+    b.bitmap(sx, sy, sketch.tsplWidthBytes, sketch.tsplHeight, sketch.tsplBitmap);
+    // Frame so the sketch reads as an ID photo, not a stray smudge.
+    b.box(sx - 4, sy - 4,
+        sx + sketch.tsplWidthPx + 4, sy + sketch.tsplHeight + 4,
+        thickness: 2);
+  }
+
   // ── Footer ────────────────────────────────────────────────────────────────
   b.bar(m, H - m - 55, innerW, 3);
   b.centerText(H - m - 45, 'Security Department  |  $schoolName', font: 2);
@@ -180,7 +222,8 @@ Uint8List _buildTsplPass(Visitor visitor, String schoolName) {
 
 // ── PDF pass (fallback when no USB printer detected) ──────────────────────────
 
-Future<Uint8List> _buildPassDoc(Visitor visitor, String schoolName) async {
+Future<Uint8List> _buildPassDoc(
+    Visitor visitor, String schoolName, Sketch? sketch) async {
   final pdf = pw.Document();
 
   const headerBlue = PdfColor.fromInt(0xFF1E3A8A);
@@ -193,8 +236,12 @@ Future<Uint8List> _buildPassDoc(Visitor visitor, String schoolName) async {
   const borderGrey = PdfColor.fromInt(0xFFE5E7EB);
   const labelBlue  = PdfColor.fromInt(0xFF1E40AF);
 
+  // Prefer the on-device pencil sketch; fall back to the original photo if
+  // the sketch couldn't be generated (decode failure, no network, etc.).
   pw.ImageProvider? visitorPhoto;
-  if (visitor.imagePath != null && visitor.imagePath!.isNotEmpty) {
+  if (sketch != null) {
+    visitorPhoto = pw.MemoryImage(sketch.png);
+  } else if (visitor.imagePath != null && visitor.imagePath!.isNotEmpty) {
     try {
       visitorPhoto = await networkImage(visitor.imagePath!);
     } catch (_) {}

@@ -4,6 +4,7 @@ import 'package:mobile_app/app_config.dart';
 import 'package:mobile_app/core/connectivity/offline_banner.dart';
 import 'package:mobile_app/core/network/dio_client.dart';
 import 'package:mobile_app/core/theme/app_theme.dart';
+import 'package:mobile_app/features/auth/presentation/session_lifecycle_observer.dart';
 import 'package:mobile_app/features/auth/providers/auth_provider.dart';
 import 'package:mobile_app/router/app_router.dart';
 import 'package:path_provider/path_provider.dart';
@@ -26,11 +27,13 @@ class App extends ConsumerWidget {
         themeMode: ThemeMode.system,
         routerConfig: router,
         debugShowCheckedModeBanner: false,
-        builder: (context, child) => Column(
-          children: [
-            const OfflineBanner(),
-            Expanded(child: child ?? const SizedBox.shrink()),
-          ],
+        builder: (context, child) => SessionLifecycleObserver(
+          child: Column(
+            children: [
+              const OfflineBanner(),
+              Expanded(child: child ?? const SizedBox.shrink()),
+            ],
+          ),
         ),
       ),
     );

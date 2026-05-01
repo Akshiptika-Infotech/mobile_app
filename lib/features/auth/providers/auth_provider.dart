@@ -42,6 +42,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   final SecureStorageService _storage;
 
   /// Checks existing session on startup.
+  /// Validates expiry and role consistency before emitting [AuthAuthenticated].
   Future<void> _checkSession() async {
     state = const AuthLoading();
     try {
@@ -50,8 +51,30 @@ class AuthNotifier extends StateNotifier<AuthState> {
         state = const AuthUnauthenticated();
         return;
       }
+
+      // Check cached expiry before making a network call.
+      final expires = await _storage.getSessionExpires();
+      if (expires != null && DateTime.now().isAfter(expires)) {
+        await _storage.clearAll();
+        state = const AuthUnauthenticated();
+        return;
+      }
+
       final user = await _repository.getSession();
       if (user != null) {
+        // Role mismatch guard: if the backend role differs from cached role,
+        // force a clean re-authentication.
+        final cachedRole = await _storage.getRole();
+        if (cachedRole != null && cachedRole != user.role) {
+          await _storage.clearAll();
+          state = const AuthUnauthenticated();
+          return;
+        }
+
+        // Persist refreshed expiry if the backend returned one.
+        if (user.expires != null) {
+          await _storage.saveSessionExpires(user.expires!);
+        }
         state = AuthAuthenticated(user);
       } else {
         await _storage.clearAll();
@@ -68,6 +91,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final user = await _repository.login(email, password);
       await _storage.saveSession('session');
       await _storage.saveRole(user.role);
+      if (user.expires != null) {
+        await _storage.saveSessionExpires(user.expires!);
+      }
+      await _storage.saveRoleUpdatedAt(DateTime.now());
       state = AuthAuthenticated(user);
     } on AuthException catch (e) {
       state = AuthError(e.message);
@@ -88,10 +115,70 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  /// Proactively validates the session when the app resumes from background.
+  /// If the session has expired, emits [AuthUnauthenticated] gracefully.
+  /// If the session is near expiry (within 24h), attempts a refresh first.
+  Future<void> validateSession() async {
+    final current = state;
+    if (current is! AuthAuthenticated) return;
+
+    try {
+      final expires = await _storage.getSessionExpires();
+      final now = DateTime.now();
+
+      // If already expired → force logout.
+      if (expires != null && now.isAfter(expires)) {
+        await logout();
+        return;
+      }
+
+      // If near expiry (within 24 hours) → try backend refresh.
+      final nearExpiry = expires != null &&
+          expires.difference(now).inHours < 24;
+
+      UserModel? refreshed;
+      if (nearExpiry) {
+        refreshed = await _repository.refreshSession();
+      } else {
+        refreshed = await _repository.getSession();
+      }
+
+      if (refreshed == null) {
+        await logout();
+        return;
+      }
+
+      // Role mismatch guard on resume.
+      final cachedRole = await _storage.getRole();
+      if (cachedRole != null && cachedRole != refreshed.role) {
+        await logout();
+        return;
+      }
+
+      if (refreshed.expires != null) {
+        await _storage.saveSessionExpires(refreshed.expires!);
+      }
+      state = AuthAuthenticated(refreshed);
+    } catch (_) {
+      // Network error on resume is non-fatal; keep current state.
+      // The next API call will trigger the 401 interceptor if truly expired.
+    }
+  }
+
   void clearError() {
     if (state is AuthError) {
       state = const AuthUnauthenticated();
     }
+  }
+
+  /// Updates the cached user's avatar in-memory after a successful upload.
+  /// Pass `null` to clear it.
+  void updateUserImage(String? imageUrl) {
+    final current = state;
+    if (current is! AuthAuthenticated) return;
+    state = AuthAuthenticated(
+      current.user.copyWith(image: imageUrl, clearImage: imageUrl == null),
+    );
   }
 }
 
