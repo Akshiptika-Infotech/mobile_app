@@ -18,8 +18,6 @@ class NotificationLogScreen extends ConsumerWidget {
       backgroundColor: cs.surfaceContainerLowest,
       appBar: AppBar(
         title: const Text('Notification Log'),
-        backgroundColor: cs.surface,
-        surfaceTintColor: cs.surfaceTint,
         actions: [
           IconButton(
             onPressed: () => ref.invalidate(notificationLogProvider),

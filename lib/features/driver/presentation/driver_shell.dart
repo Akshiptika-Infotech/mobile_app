@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile_app/app_config.dart';
 
 class DriverShell extends StatelessWidget {
   const DriverShell({super.key, required this.child});
@@ -7,42 +8,83 @@ class DriverShell extends StatelessWidget {
   final Widget child;
 
   static const _tabs = [
-    _TabItem(label: 'Dashboard', icon: Icons.dashboard_outlined,
-        activeIcon: Icons.dashboard, path: '/driver/dashboard'),
-    _TabItem(label: 'Route', icon: Icons.map_outlined,
-        activeIcon: Icons.map, path: '/driver/route'),
-    _TabItem(label: 'Students', icon: Icons.people_outlined,
-        activeIcon: Icons.people, path: '/driver/students'),
-    _TabItem(label: 'Attendance', icon: Icons.fact_check_outlined,
-        activeIcon: Icons.fact_check, path: '/driver/attendance'),
+    _TabItem(
+      label: 'Dashboard',
+      icon: Icons.dashboard_outlined,
+      activeIcon: Icons.dashboard_rounded,
+      path: '/driver/dashboard',
+    ),
+    _TabItem(
+      label: 'Route',
+      icon: Icons.alt_route_outlined,
+      activeIcon: Icons.alt_route_rounded,
+      path: '/driver/route',
+    ),
+    _TabItem(
+      label: 'Trip',
+      icon: Icons.directions_bus_outlined,
+      activeIcon: Icons.directions_bus_rounded,
+      path: '/driver/trip',
+    ),
+    _TabItem(
+      label: 'More',
+      icon: Icons.apps_outlined,
+      activeIcon: Icons.apps_rounded,
+      path: '/driver/more',
+    ),
   ];
 
   int _selectedIndex(String location) {
+    var bestIndex = 0;
+    var bestLen = 0;
     for (var i = 0; i < _tabs.length; i++) {
-      if (location.startsWith(_tabs[i].path)) return i;
+      final p = _tabs[i].path;
+      if (location.startsWith(p) && p.length > bestLen) {
+        bestIndex = i;
+        bestLen = p.length;
+      }
     }
-    return 0;
+    return bestIndex;
   }
 
   @override
   Widget build(BuildContext context) {
     final location = GoRouterState.of(context).matchedLocation;
     final selectedIndex = _selectedIndex(location);
+    final brand = AppConfigScope.of(context).primaryColor;
 
     return Scaffold(
       restorationId: 'driver_shell',
       body: child,
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: selectedIndex,
-        onDestinationSelected: (index) =>
-            context.go(_tabs[index].path),
-        destinations: _tabs
-            .map((t) => NavigationDestination(
-                  icon: Icon(t.icon),
-                  selectedIcon: Icon(t.activeIcon),
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: brand,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.10),
+              blurRadius: 8,
+              offset: const Offset(0, -2),
+            ),
+          ],
+        ),
+        child: NavigationBar(
+          selectedIndex: selectedIndex,
+          onDestinationSelected: (index) => context.go(_tabs[index].path),
+          height: 64,
+          backgroundColor: brand,
+          surfaceTintColor: Colors.transparent,
+          indicatorColor: Colors.white.withValues(alpha: 0.20),
+          labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+          destinations: _tabs
+              .map(
+                (t) => NavigationDestination(
+                  icon: Icon(t.icon, color: Colors.white.withValues(alpha: 0.7)),
+                  selectedIcon: Icon(t.activeIcon, color: Colors.white),
                   label: t.label,
-                ))
-            .toList(),
+                ),
+              )
+              .toList(),
+        ),
       ),
     );
   }
@@ -55,6 +97,7 @@ class _TabItem {
     required this.activeIcon,
     required this.path,
   });
+
   final String label;
   final IconData icon;
   final IconData activeIcon;

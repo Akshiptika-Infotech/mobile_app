@@ -64,6 +64,9 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen> {
       widget.params.date,
     ].join(' · ');
 
+    final loc = GoRouterState.of(context).matchedLocation;
+    final routePrefix = loc.startsWith('/teacher') ? '/teacher' : '/admin';
+
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
@@ -86,7 +89,7 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen> {
           ),
           TextButton(
             onPressed: () =>
-                context.push('/admin/attendance/qr-live',
+                context.push('$routePrefix/attendance/qr-live',
                     extra: widget.params),
             child: const Text('Live List',
                 style: TextStyle(color: Colors.white)),

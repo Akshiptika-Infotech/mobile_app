@@ -15,7 +15,9 @@ class StudentModel {
     this.house,
     this.address,
     this.academicYear,
+    this.academicYearId,
     this.transportRoute,
+    this.transportRouteId,
     this.photoUrl,
     this.fatherName,
     this.fatherPhone,
@@ -41,7 +43,9 @@ class StudentModel {
   final String? house;
   final String? address;
   final String? academicYear;
+  final String? academicYearId;
   final String? transportRoute;
+  final String? transportRouteId;
   final String? photoUrl;
   final String? fatherName;
   final String? fatherPhone;
@@ -100,17 +104,36 @@ class StudentModel {
       house: _extractNested(json['house']).isNotEmpty
           ? _extractNested(json['house'])
           : null,
-      address: (json['address'] ?? json['currentAddress'])?.toString(),
+      // Address isn't on the Student model itself — it's stored on the
+      // related StudentParent row (fatherAddress / motherAddress). Fall back
+      // to top-level keys for list endpoints that flatten the shape.
+      address: _parentField(json, 'fatherAddress', 'father_address') ??
+          _parentField(json, 'motherAddress', 'mother_address') ??
+          (json['address'] ?? json['currentAddress'])?.toString(),
       academicYear: _extractNested(json['academicYear'] ?? json['academic_year'])
           .isNotEmpty
           ? _extractNested(json['academicYear'] ?? json['academic_year'])
           : null,
+      academicYearId: (json['academicYearId'] ?? json['academic_year_id'])
+          ?.toString(),
       transportRoute:
           _extractNested(json['transportRoute'] ?? json['transport_route'])
               .isNotEmpty
               ? _extractNested(
                   json['transportRoute'] ?? json['transport_route'])
               : null,
+      // The detail endpoint returns transportAssignment.routeId — keep the id
+      // around so the detail screen can resolve the route name from the
+      // transport-routes lookup.
+      transportRouteId: () {
+        final ta = json['transportAssignment'];
+        if (ta is Map<String, dynamic>) {
+          final id = ta['routeId'] ?? ta['route_id'];
+          if (id != null && id.toString().isNotEmpty) return id.toString();
+        }
+        final top = json['transportRouteId'] ?? json['transport_route_id'];
+        return top?.toString();
+      }(),
       photoUrl: (json['photoUrl'] ?? json['photo_url'] ?? json['photoPath'] ?? json['photo_path'] ?? json['photo'])?.toString(),
       // Parent fields are nested under `parent` on the detail endpoint
       // (Prisma returns the full StudentParent row); fall back to the

@@ -1,3 +1,4 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile_app/app_config.dart';
@@ -46,6 +47,7 @@ class App extends ConsumerWidget {
 /// engine to be initialized before it can be called.
 Future<ProviderContainer> buildContainer(AppConfig config) async {
   final appDir = await getApplicationDocumentsDirectory();
+  await _initFirebaseSafely();
   late ProviderContainer container;
   final dio = buildDioClient(
     config,
@@ -60,4 +62,19 @@ Future<ProviderContainer> buildContainer(AppConfig config) async {
     ],
   );
   return container;
+}
+
+/// Initialises Firebase using the platform defaults (Android reads
+/// `google-services.json`, iOS reads `GoogleService-Info.plist`). The driver
+/// portal uses Realtime Database for live bus tracking; when Firebase isn't
+/// configured the location service degrades gracefully (history-only via
+/// `POST /api/driver/location`).
+Future<void> _initFirebaseSafely() async {
+  try {
+    await Firebase.initializeApp();
+  } catch (e) {
+    // Firebase isn't configured for this flavor yet — that's fine, the
+    // app still works without live GPS fan-out.
+    debugPrint('[buildContainer] Firebase init skipped: $e');
+  }
 }

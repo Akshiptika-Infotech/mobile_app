@@ -83,8 +83,6 @@ class _ConcessionsScreenState extends ConsumerState<ConcessionsScreen> {
       backgroundColor: cs.surfaceContainerLowest,
       appBar: AppBar(
         title: const Text('Concessions'),
-        backgroundColor: cs.surface,
-        surfaceTintColor: cs.surfaceTint,
       ),
       body: Column(
         children: [

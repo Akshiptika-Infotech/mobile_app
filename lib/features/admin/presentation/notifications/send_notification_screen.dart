@@ -62,8 +62,6 @@ class _SendNotificationScreenState extends ConsumerState<SendNotificationScreen>
       backgroundColor: cs.surfaceContainerLowest,
       appBar: AppBar(
         title: const Text('Send Notification'),
-        backgroundColor: cs.surface,
-        surfaceTintColor: cs.surfaceTint,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),

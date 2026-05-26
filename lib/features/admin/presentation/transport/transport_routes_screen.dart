@@ -106,8 +106,6 @@ class _TransportRoutesScreenState extends ConsumerState<TransportRoutesScreen> {
       backgroundColor: cs.surfaceContainerLowest,
       appBar: AppBar(
         title: const Text('Transport Routes'),
-        backgroundColor: cs.surface,
-        surfaceTintColor: cs.surfaceTint,
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _showAdd,

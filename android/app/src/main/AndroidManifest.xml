@@ -3,6 +3,19 @@
     <!-- USB Host: required for OTG thermal printer access -->
     <uses-feature android:name="android.hardware.usb.host" android:required="false" />
 
+    <!-- Internet + connectivity (already implicit via Flutter, declared for clarity) -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <!-- Driver portal: GPS tracking while bus trips are in progress. -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+
     <application
         android:label="@string/app_name"
         android:name="${applicationName}"
@@ -35,6 +48,22 @@
                 android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED"
                 android:resource="@xml/usb_device_filter" />
         </activity>
+        <!-- Google Maps API key for the driver portal map preview.
+             Replace YOUR_GOOGLE_MAPS_API_KEY below with a real key from
+             https://console.cloud.google.com/google/maps-apis (restrict
+             to Android, package: in.jmukhisics.mobile_app /
+             in.sicschool.mobile_app / in.schoolfeepro.mobile_app). -->
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="YOUR_GOOGLE_MAPS_API_KEY" />
+
+        <!-- flutter_foreground_task: service used by the driver portal's
+             GPS tracker. -->
+        <service
+            android:name="com.pravera.flutter_foreground_task.service.ForegroundService"
+            android:foregroundServiceType="location"
+            android:exported="false" />
+
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

@@ -31,8 +31,6 @@ class _DigiLockerScreenState extends ConsumerState<DigiLockerScreen> {
       backgroundColor: cs.surfaceContainerLowest,
       appBar: AppBar(
         title: const Text('DigiLocker PINs'),
-        backgroundColor: cs.surface,
-        surfaceTintColor: cs.surfaceTint,
       ),
       body: Column(
         children: [

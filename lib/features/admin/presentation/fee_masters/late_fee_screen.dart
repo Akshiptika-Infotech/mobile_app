@@ -57,8 +57,6 @@ class _LateFeeScreenState extends ConsumerState<LateFeeScreen> {
       backgroundColor: cs.surfaceContainerLowest,
       appBar: AppBar(
         title: const Text('Late Fee Config'),
-        backgroundColor: cs.surface,
-        surfaceTintColor: cs.surfaceTint,
       ),
       body: config.when(
         loading: () => const Center(child: CircularProgressIndicator()),

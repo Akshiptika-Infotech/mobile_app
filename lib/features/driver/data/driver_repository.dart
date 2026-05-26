@@ -1,128 +1,181 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import 'package:mobile_app/core/network/dio_client.dart';
-import 'package:mobile_app/features/driver/domain/driver_model.dart';
-
-class DriverRepository {
-  const DriverRepository(this._dio);
-  final Dio _dio;
-
-  // GET /api/driver/trips?date=today — returns list of trips for the driver
-  Future<DriverTrip> fetchTrip() async {
-    final dateStr = DateFormat('yyyy-MM-dd').format(DateTime.now());
-    final res = await _dio.get('/api/driver/trips', queryParameters: {'date': dateStr});
-    final data = res.data;
-    // API returns array of trips; take the first active or first one
-    List<dynamic> trips;
-    if (data is List) {
-      trips = data;
-    } else if (data is Map<String, dynamic>) {
-      trips = (data['trips'] ?? data['data'] ?? <dynamic>[]) as List;
-    } else {
-      trips = [];
-    }
-
-    if (trips.isEmpty) {
-      // No trip today — return empty trip backed by route info
-      return _tripFromRoute();
-    }
-
-    // Prefer active trip, else first
-    final trip = trips.firstWhere(
-      (t) => (t['status'] ?? '').toString().toLowerCase() == 'active',
-      orElse: () => trips.first,
-    );
-    if (trip is! Map<String, dynamic>) throw Exception('Unexpected trip shape');
-    return DriverTrip.fromTripJson(trip);
-  }
-
-  Future<DriverTrip> _tripFromRoute() async {
-    final res = await _dio.get('/api/driver/route');
-    final data = res.data;
-    if (data == null) return DriverTrip.empty();
-    if (data is! Map<String, dynamic>) throw Exception('Unexpected route shape');
-    return DriverTrip.fromRouteJson(data);
-  }
-
-  // GET /api/driver/route — route with stoppages and student assignments
-  Future<DriverRoute> fetchRoute() async {
-    final res = await _dio.get('/api/driver/route');
-    final data = res.data;
-    if (data == null) return DriverRoute.empty();
-    if (data is! Map<String, dynamic>) throw Exception('Unexpected route shape');
-    return DriverRoute.fromJson(data);
-  }
-
-  // Extract students from route stoppages (no dedicated /api/driver/students endpoint)
-  Future<List<DriverStudent>> fetchStudents() async {
-    final res = await _dio.get('/api/driver/route');
-    final data = res.data;
-    if (data == null) return [];
-    final stoppages = (data['stoppages'] ?? data['stops'] ?? <dynamic>[]) as List;
-    final students = <DriverStudent>[];
-    for (final stop in stoppages) {
-      final stopMap = stop as Map<String, dynamic>;
-      final stopName = (stopMap['name'] ?? '').toString();
-      final assignments = (stopMap['assignments'] ?? <dynamic>[]) as List;
-      for (final assignment in assignments) {
-        final a = assignment as Map<String, dynamic>;
-        final stu = a['student'] as Map<String, dynamic>?;
-        if (stu == null) continue;
-        students.add(DriverStudent.fromRouteJson(stu, stopName));
-      }
-    }
-    return students;
-  }
-
-  // GET /api/driver/trips?date=today → find trip ID → GET /api/driver/trips/{id}/attendance
-  Future<List<DriverStudent>> fetchAttendance(String tripType) async {
-    final tripId = await _getTodayTripId(tripType);
-    if (tripId == null) return [];
-    final res = await _dio.get('/api/driver/trips/$tripId/attendance');
-    final data = res.data as Map<String, dynamic>?;
-    if (data == null) return [];
-    final attendance = (data['attendance'] ?? <dynamic>[]) as List;
-    return attendance
-        .map((e) => DriverStudent.fromTripAttendanceJson(e as Map<String, dynamic>))
-        .toList();
-  }
-
-  // PUT /api/driver/trips/{id}/attendance
-  Future<void> submitAttendance(String tripType, List<Map<String, dynamic>> records) async {
-    final tripId = await _getTodayTripId(tripType);
-    if (tripId == null) throw Exception('No trip found for today ($tripType)');
-    await _dio.put('/api/driver/trips/$tripId/attendance', data: {
-      'attendance': records,
-      'complete': true,
-    });
-  }
-
-  Future<String?> _getTodayTripId(String tripType) async {
-    final dateStr = DateFormat('yyyy-MM-dd').format(DateTime.now());
-    final res = await _dio.get('/api/driver/trips', queryParameters: {'date': dateStr});
-    final data = res.data;
-    List<dynamic> trips;
-    if (data is List) {
-      trips = data;
-    } else if (data is Map<String, dynamic>) {
-      trips = (data['trips'] ?? data['data'] ?? <dynamic>[]) as List;
-    } else {
-      return null;
-    }
-    if (trips.isEmpty) return null;
-
-    // Match by tripType (morning/afternoon)
-    final match = trips.firstWhere(
-      (t) => (t['tripType'] ?? '').toString().toLowerCase() == tripType.toLowerCase(),
-      orElse: () => trips.first,
-    );
-    return (match['id'] ?? '').toString().isNotEmpty
-        ? (match['id'] ?? '').toString()
-        : null;
-  }
-}
+import 'package:mobile_app/features/driver/domain/driver_profile_model.dart';
+import 'package:mobile_app/features/driver/domain/driver_route_model.dart';
+import 'package:mobile_app/features/driver/domain/driver_trip_model.dart';
 
 final driverRepositoryProvider = Provider<DriverRepository>((ref) {
   return DriverRepository(ref.watch(dioClientProvider));
 });
+
+class DriverRepository {
+  DriverRepository(this._dio);
+
+  final Dio _dio;
+
+  // ── Route ──────────────────────────────────────────────────────────────────
+
+  /// `GET /api/driver/route` — returns the route assigned to the driver, or
+  /// `null` if no route exists.
+  Future<DriverRoute?> fetchRoute() async {
+    final res = await _dio.get('/api/driver/route');
+    final data = res.data;
+    if (data == null) return null;
+    if (data is Map<String, dynamic>) return DriverRoute.fromJson(data);
+    return null;
+  }
+
+  // ── Trips ──────────────────────────────────────────────────────────────────
+
+  /// `GET /api/driver/trips?date=YYYY-MM-DD` — list of today's (or given
+  /// date's) trips for this driver. Backend wraps the list under `data`.
+  Future<List<DriverTrip>> fetchTripsForDate(DateTime date) async {
+    final res = await _dio.get(
+      '/api/driver/trips',
+      queryParameters: {'date': _yyyyMmDd(date)},
+    );
+    final data = res.data;
+    final list = _extractList(data);
+    return list
+        .map((e) => DriverTrip.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  /// `POST /api/driver/trips` — starts a new trip; backend creates one
+  /// attendance row per assigned student. Returns the created trip with
+  /// its attendance pre-populated.
+  Future<DriverTrip> startTrip({
+    required String routeId,
+    required DateTime date,
+    required TripType tripType,
+  }) async {
+    final res = await _dio.post(
+      '/api/driver/trips',
+      data: {
+        'routeId': routeId,
+        'tripDate': _yyyyMmDd(date),
+        'tripType': tripType.apiValue,
+      },
+    );
+    return DriverTrip.fromJson(_unwrap(res.data));
+  }
+
+  /// `GET /api/driver/trips/:id/attendance` — full trip detail including
+  /// per-student attendance rows.
+  Future<DriverTrip> fetchTripAttendance(String tripId) async {
+    final res = await _dio.get('/api/driver/trips/$tripId/attendance');
+    return DriverTrip.fromJson(_unwrap(res.data));
+  }
+
+  /// `PUT /api/driver/trips/:id/attendance` — bulk-update attendance rows
+  /// and optionally mark the trip COMPLETED.
+  Future<void> updateTripAttendance({
+    required String tripId,
+    required List<TripAttendance> rows,
+    bool complete = false,
+  }) async {
+    await _dio.put(
+      '/api/driver/trips/$tripId/attendance',
+      data: {
+        'attendance': rows
+            .map((r) => {'id': r.id, 'status': r.status.apiValue})
+            .toList(),
+        if (complete) 'complete': true,
+      },
+    );
+  }
+
+  // ── GPS history ping ───────────────────────────────────────────────────────
+
+  /// `POST /api/driver/location` — stores a GPS ping for trip-history
+  /// playback. Rate-limited server-side at 120/min. Live updates are
+  /// fanned to Firebase Realtime DB by the location service, not here.
+  Future<void> postLocationPing({
+    required String tripId,
+    required double latitude,
+    required double longitude,
+    double? speed,
+    double? accuracy,
+  }) async {
+    await _dio.post(
+      '/api/driver/location',
+      data: {
+        'tripId': tripId,
+        'latitude': latitude,
+        'longitude': longitude,
+        if (speed != null) 'speed': speed,
+        if (accuracy != null) 'accuracy': accuracy,
+      },
+    );
+  }
+
+  // ── Profile ────────────────────────────────────────────────────────────────
+
+  Future<DriverProfile> fetchProfile() async {
+    final res = await _dio.get('/api/driver/profile');
+    return DriverProfile.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  Future<void> updateProfilePhoto(String imageUrl) async {
+    await _dio.patch('/api/driver/profile', data: {'image': imageUrl});
+  }
+
+  /// Uploads a local image file to the shared `/api/admin/upload` Cloudinary
+  /// endpoint (auth-only — drivers are permitted) and returns the hosted URL.
+  /// Uses the `avatars/` folder so the backend skips the face-aware 4:5
+  /// crop that's reserved for student/staff ID photos (`photos/`).
+  Future<String> uploadProfilePhoto(String filePath) async {
+    final form = FormData.fromMap({
+      'file': await MultipartFile.fromFile(filePath),
+      'folder': 'avatars',
+      'resourceType': 'image',
+    });
+    final res = await _dio.post('/api/admin/upload', data: form);
+    final data = res.data;
+    if (data is! Map<String, dynamic>) {
+      throw Exception('Unexpected upload response format');
+    }
+    final url = (data['url'] ?? data['path'] ?? '').toString();
+    if (url.isEmpty) throw Exception('Upload returned an empty URL');
+    return url;
+  }
+
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    await _dio.patch('/api/driver/profile', data: {
+      'currentPassword': currentPassword,
+      'newPassword': newPassword,
+    });
+  }
+
+  // ── Helpers ────────────────────────────────────────────────────────────────
+
+  static String _yyyyMmDd(DateTime d) =>
+      '${d.year.toString().padLeft(4, '0')}-'
+      '${d.month.toString().padLeft(2, '0')}-'
+      '${d.day.toString().padLeft(2, '0')}';
+
+  /// Backend wraps some responses as `{success: true, data: ...}`. Some use a
+  /// bare object. Normalise both.
+  static Map<String, dynamic> _unwrap(dynamic data) {
+    if (data is Map<String, dynamic> &&
+        data['success'] == true &&
+        data['data'] is Map<String, dynamic>) {
+      return data['data'] as Map<String, dynamic>;
+    }
+    if (data is Map<String, dynamic>) return data;
+    return <String, dynamic>{};
+  }
+
+  static List<dynamic> _extractList(dynamic data) {
+    if (data is List) return data;
+    if (data is Map<String, dynamic>) {
+      if (data['data'] is List) return data['data'] as List;
+      if (data['trips'] is List) return data['trips'] as List;
+    }
+    return const [];
+  }
+}

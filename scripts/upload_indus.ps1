@@ -5,10 +5,11 @@ $API_KEY = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJpc3MiOiJpZGVudGl0eU1hbmFnZXI
 $BASE_URL = "https://developer-api.indusappstore.com"
 
 $apps = @(
-    @{ Name = "JMukhisics"; Package = "in.jmukhisics.mobile_app"; APK = "build/app/outputs/flutter-apk/app-jmukhisics-release.apk"; Version = "1.0.4"; VersionCode = 5 },
-    @{ Name = "SIC School"; Package = "in.sicschool.mobile_app"; APK = "build/app/outputs/flutter-apk/app-sicschool-release.apk"; Version = "1.0.4"; VersionCode = 5 },
-    @{ Name = "SchoolFeePro"; Package = "in.schoolfeepro.mobile_app"; APK = "build/app/outputs/flutter-apk/app-schoolfeepro-release.apk"; Version = "1.0.4"; VersionCode = 5 },
-    @{ Name = "The Shivalik"; Package = "in.theshivalik.mobile_app"; APK = "build/app/outputs/flutter-apk/app-theshivalik-release.apk"; Version = "1.0.3"; VersionCode = 4 }
+    @{ Name = "JMukhisics"; Package = "in.jmukhisics.mobile_app"; APK = "build/app/outputs/flutter-apk/app-jmukhisics-release.apk"; Version = "1.0.6"; VersionCode = 7 },
+    @{ Name = "SIC School"; Package = "in.sicschool.mobile_app"; APK = "build/app/outputs/flutter-apk/app-sicschool-release.apk"; Version = "1.0.6"; VersionCode = 7 },
+    @{ Name = "SchoolFeePro"; Package = "in.schoolfeepro.mobile_app"; APK = "build/app/outputs/flutter-apk/app-schoolfeepro-release.apk"; Version = "1.0.6"; VersionCode = 7 },
+    @{ Name = "The Shivalik"; Package = "in.theshivalik.mobile_app"; APK = "build/app/outputs/flutter-apk/app-theshivalik-release.apk"; Version = "1.0.6"; VersionCode = 7 },
+    @{ Name = "Shivalik Smart Kids"; Package = "in.shivaliksmartkids.mobile_app"; APK = "build/app/outputs/flutter-apk/app-shivaliksmartkids-release.apk"; Version = "1.0.6"; VersionCode = 7 }
 )
 
 $results = @()

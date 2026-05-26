@@ -2,9 +2,14 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:mobile_app/features/admin/domain/class_model.dart';
 import 'package:mobile_app/features/admin/domain/student_model.dart';
+import 'package:mobile_app/features/admin/domain/transport_model.dart';
+import 'package:mobile_app/features/admin/providers/class_provider.dart';
 import 'package:mobile_app/features/admin/providers/student_provider.dart';
+import 'package:mobile_app/features/admin/providers/transport_admin_provider.dart';
 
 class StudentDetailScreen extends ConsumerWidget {
   const StudentDetailScreen({super.key, required this.studentId});
@@ -33,7 +38,7 @@ class StudentDetailScreen extends ConsumerWidget {
   }
 }
 
-class _StudentDetailBody extends StatelessWidget {
+class _StudentDetailBody extends ConsumerWidget {
   const _StudentDetailBody({
     required this.student,
     required this.studentId,
@@ -41,9 +46,61 @@ class _StudentDetailBody extends StatelessWidget {
   final StudentModel student;
   final String studentId;
 
+  Future<void> _pickAndUploadPhoto(BuildContext context, WidgetRef ref) async {
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      builder: (sheetCtx) => SafeArea(
+        child: Wrap(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_camera_rounded),
+              title: const Text('Take a photo'),
+              onTap: () => Navigator.pop(sheetCtx, ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_rounded),
+              title: const Text('Choose from gallery'),
+              onTap: () => Navigator.pop(sheetCtx, ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (source == null) return;
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(
+      source: source,
+      imageQuality: 85,
+      maxWidth: 1600,
+    );
+    if (picked == null) return;
+    await ref
+        .read(studentFormProvider.notifier)
+        .updatePhoto(studentId, picked.path);
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
+    final formState = ref.watch(studentFormProvider);
+    final loc = GoRouterState.of(context).matchedLocation;
+    final isTeacher = loc.startsWith('/teacher');
+
+    ref.listen(studentFormProvider, (_, next) {
+      if (!context.mounted) return;
+      if (next.success) {
+        ref.read(studentFormProvider.notifier).reset();
+        ref.invalidate(studentDetailProvider(studentId));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Photo updated.')),
+        );
+      } else if (next.error != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(next.error!)),
+        );
+        ref.read(studentFormProvider.notifier).reset();
+      }
+    });
 
     return DefaultTabController(
       length: 3,
@@ -58,12 +115,28 @@ class _StudentDetailBody extends StatelessWidget {
                     student: student, colorScheme: colorScheme),
               ),
               actions: [
-                IconButton(
-                  icon: const Icon(Icons.edit_rounded),
-                  tooltip: 'Edit',
-                  onPressed: () =>
-                      context.push('/admin/students/$studentId/edit'),
-                ),
+                if (isTeacher)
+                  IconButton(
+                    icon: formState.isSubmitting
+                        ? const SizedBox(
+                            height: 18,
+                            width: 18,
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2, color: Colors.white),
+                          )
+                        : const Icon(Icons.add_a_photo_outlined),
+                    tooltip: 'Change photo',
+                    onPressed: formState.isSubmitting
+                        ? null
+                        : () => _pickAndUploadPhoto(context, ref),
+                  )
+                else
+                  IconButton(
+                    icon: const Icon(Icons.edit_rounded),
+                    tooltip: 'Edit',
+                    onPressed: () =>
+                        context.push('/admin/students/$studentId/edit'),
+                  ),
               ],
               bottom: const TabBar(
                 tabs: [
@@ -221,12 +294,49 @@ class _PersonalTab extends StatelessWidget {
 
 // ── Academic Tab ──────────────────────────────────────────────────────────────
 
-class _AcademicTab extends StatelessWidget {
+class _AcademicTab extends ConsumerWidget {
   const _AcademicTab({required this.student});
   final StudentModel student;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // The student detail API only returns IDs for academic year and transport
+    // route. Resolve them against the master lookups to show the actual names.
+    final academicYearsAsync = ref.watch(academicYearsProvider);
+    final transportRoutesAsync = ref.watch(transportRoutesProvider);
+
+    String resolvedAcademicYear = student.academicYear ?? '';
+    if (resolvedAcademicYear.isEmpty && student.academicYearId != null) {
+      academicYearsAsync.whenData((years) {
+        final match = years.firstWhere(
+          (y) => y.id == student.academicYearId,
+          orElse: () => const AcademicYear(
+              id: '', name: '', startDate: '', endDate: '', isActive: false),
+        );
+        if (match.name.isNotEmpty) resolvedAcademicYear = match.name;
+      });
+    }
+
+    String resolvedTransportRoute = student.transportRoute ?? '';
+    if (resolvedTransportRoute.isEmpty && student.transportRouteId != null) {
+      transportRoutesAsync.whenData((routes) {
+        final match = routes.firstWhere(
+          (r) => r.id == student.transportRouteId,
+          orElse: () => const TransportRoute(
+            id: '',
+            name: '',
+            vehicleNumber: '',
+            driverName: '',
+            driverContact: '',
+            conductorName: '',
+            conductorContact: '',
+            stoppages: [],
+          ),
+        );
+        if (match.name.isNotEmpty) resolvedTransportRoute = match.name;
+      });
+    }
+
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
@@ -235,8 +345,10 @@ class _AcademicTab extends StatelessWidget {
           _InfoItem('Section', student.section),
           _InfoItem('Roll Number', student.rollNumber),
           _InfoItem('Admission Number', student.admissionNumber),
-          _InfoItem('Academic Year', student.academicYear ?? '—'),
-          _InfoItem('Transport Route', student.transportRoute ?? '—'),
+          _InfoItem('Academic Year',
+              resolvedAcademicYear.isNotEmpty ? resolvedAcademicYear : '—'),
+          _InfoItem('Transport Route',
+              resolvedTransportRoute.isNotEmpty ? resolvedTransportRoute : '—'),
         ]),
       ],
     );

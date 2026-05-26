@@ -20,8 +20,6 @@ class AcademicYearsScreen extends ConsumerWidget {
       backgroundColor: cs.surfaceContainerLowest,
       appBar: AppBar(
         title: const Text('Academic Years'),
-        backgroundColor: cs.surface,
-        surfaceTintColor: cs.surfaceTint,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh_rounded),

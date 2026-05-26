@@ -20,8 +20,6 @@ class ReportCardsScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Report Cards'),
         centerTitle: false,
-        backgroundColor: cs.surface,
-        surfaceTintColor: cs.surfaceTint,
       ),
       body: Column(
         children: [

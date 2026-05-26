@@ -23,8 +23,6 @@ class ClassesScreen extends ConsumerWidget {
       backgroundColor: cs.surfaceContainerLowest,
       appBar: AppBar(
         title: const Text('Classes'),
-        backgroundColor: cs.surface,
-        surfaceTintColor: cs.surfaceTint,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh_rounded),

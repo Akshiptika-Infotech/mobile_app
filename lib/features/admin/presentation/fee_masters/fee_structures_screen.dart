@@ -19,8 +19,6 @@ class FeeStructuresScreen extends ConsumerWidget {
       backgroundColor: cs.surfaceContainerLowest,
       appBar: AppBar(
         title: const Text('Fee Structures'),
-        backgroundColor: cs.surface,
-        surfaceTintColor: cs.surfaceTint,
       ),
       body: list.when(
         loading: () => Padding(

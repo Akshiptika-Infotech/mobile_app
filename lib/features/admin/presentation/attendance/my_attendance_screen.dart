@@ -16,8 +16,6 @@ class MyAttendanceScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('My Attendance'),
         centerTitle: false,
-        backgroundColor: cs.surface,
-        surfaceTintColor: cs.surfaceTint,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh_rounded),

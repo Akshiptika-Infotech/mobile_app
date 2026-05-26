@@ -2,7 +2,7 @@ name: mobile_app
 description: "A multi-flavor school management Flutter app."
 publish_to: 'none'
 
-version: 1.0.4+5
+version: 1.0.6+7
 
 environment:
   sdk: ^3.11.4
@@ -25,7 +25,7 @@ dependencies:
   image_picker: ^1.0.7
   pdf: ^3.11.0
   printing: ^5.12.0
-  share_plus: ^9.0.0
+  share_plus: ^12.0.0
   connectivity_plus: ^6.0.0
   cached_network_image: ^3.3.0
   path_provider: ^2.1.0
@@ -38,6 +38,13 @@ dependencies:
   sqflite: ^2.3.3
   uuid: ^4.4.0
   path: ^1.9.0
+  # ── Driver portal: GPS + live tracking + map ───────────────────────────
+  geolocator: ^12.0.0
+  permission_handler: ^11.3.1
+  flutter_foreground_task: ^8.5.3
+  firebase_core: ^3.6.0
+  firebase_database: ^11.1.5
+  google_maps_flutter: ^2.9.0
 
 dev_dependencies:
   flutter_test:

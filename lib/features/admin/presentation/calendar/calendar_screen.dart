@@ -20,8 +20,6 @@ class CalendarScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Calendar'),
         centerTitle: false,
-        backgroundColor: cs.surface,
-        surfaceTintColor: cs.surfaceTint,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh_rounded),

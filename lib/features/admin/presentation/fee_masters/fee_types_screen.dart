@@ -78,8 +78,6 @@ class _FeeTypesScreenState extends ConsumerState<FeeTypesScreen> {
       backgroundColor: cs.surfaceContainerLowest,
       appBar: AppBar(
         title: const Text('Fee Types'),
-        backgroundColor: cs.surface,
-        surfaceTintColor: cs.surfaceTint,
       ),
       body: Column(
         children: [

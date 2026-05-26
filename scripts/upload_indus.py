@@ -13,10 +13,11 @@ API_KEY = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJpc3MiOiJpZGVudGl0eU1hbmFnZXIi
 BASE_HOST = "developer-api.indusappstore.com"
 
 APPS = [
-    {"name": "JMukhisics", "package": "in.jmukhisics.mobile_app", "apk": "build/app/outputs/flutter-apk/app-jmukhisics-release.apk", "version": "1.0.4", "versionCode": 5},
-    {"name": "SIC School", "package": "in.sicschool.mobile_app", "apk": "build/app/outputs/flutter-apk/app-sicschool-release.apk", "version": "1.0.4", "versionCode": 5},
-    {"name": "SchoolFeePro", "package": "in.schoolfeepro.mobile_app", "apk": "build/app/outputs/flutter-apk/app-schoolfeepro-release.apk", "version": "1.0.4", "versionCode": 5},
-    {"name": "The Shivalik", "package": "in.theshivalik.mobile_app", "apk": "build/app/outputs/flutter-apk/app-theshivalik-release.apk", "version": "1.0.3", "versionCode": 4},
+    {"name": "JMukhisics", "package": "in.jmukhisics.mobile_app", "apk": "build/app/outputs/flutter-apk/app-jmukhisics-release.apk", "version": "1.0.6", "versionCode": 7},
+    {"name": "SIC School", "package": "in.sicschool.mobile_app", "apk": "build/app/outputs/flutter-apk/app-sicschool-release.apk", "version": "1.0.6", "versionCode": 7},
+    {"name": "SchoolFeePro", "package": "in.schoolfeepro.mobile_app", "apk": "build/app/outputs/flutter-apk/app-schoolfeepro-release.apk", "version": "1.0.6", "versionCode": 7},
+    {"name": "The Shivalik", "package": "in.theshivalik.mobile_app", "apk": "build/app/outputs/flutter-apk/app-theshivalik-release.apk", "version": "1.0.6", "versionCode": 7},
+    {"name": "Shivalik Smart Kids", "package": "in.shivaliksmartkids.mobile_app", "apk": "build/app/outputs/flutter-apk/app-shivaliksmartkids-release.apk", "version": "1.0.6", "versionCode": 7},
 ]
 
 

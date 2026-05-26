@@ -74,8 +74,6 @@ class _MastersScreenState extends ConsumerState<MastersScreen> {
       backgroundColor: cs.surfaceContainerLowest,
       appBar: AppBar(
         title: Text(_title),
-        backgroundColor: cs.surface,
-        surfaceTintColor: cs.surfaceTint,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh_rounded),

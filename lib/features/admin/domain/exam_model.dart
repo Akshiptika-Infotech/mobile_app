@@ -1,6 +1,10 @@
 class ExamSubject {
   const ExamSubject({
     required this.id,
+    required this.subjectId,
+    required this.examTypeId,
+    required this.classId,
+    this.sectionId,
     required this.name,
     required this.examType,
     required this.className,
@@ -10,6 +14,10 @@ class ExamSubject {
   });
 
   final String id;
+  final String subjectId;
+  final String examTypeId;
+  final String classId;
+  final String? sectionId;
   final String name;
   final String examType;
   final String className;
@@ -20,6 +28,10 @@ class ExamSubject {
   factory ExamSubject.fromJson(Map<String, dynamic> json) {
     return ExamSubject(
       id: (json['id'] ?? '').toString(),
+      subjectId: (json['subjectId'] ?? json['subject_id'] ?? '').toString(),
+      examTypeId: (json['examTypeId'] ?? json['exam_type_id'] ?? '').toString(),
+      classId: (json['classId'] ?? json['class_id'] ?? '').toString(),
+      sectionId: (json['sectionId'] ?? json['section_id'])?.toString(),
       name: (json['name'] ?? json['subject'] ?? '').toString(),
       examType:
           (json['examType'] ?? json['exam_type'] ?? '').toString(),
@@ -43,6 +55,7 @@ class StudentMark {
     required this.studentId,
     required this.studentName,
     required this.admissionNumber,
+    this.photoUrl,
     this.marksObtained,
     this.grade,
     this.remarks,
@@ -51,6 +64,7 @@ class StudentMark {
   final String studentId;
   final String studentName;
   final String admissionNumber;
+  final String? photoUrl;
   int? marksObtained;
   String? grade;
   String? remarks;
@@ -64,6 +78,11 @@ class StudentMark {
       admissionNumber:
           (json['admissionNumber'] ?? json['admission_number'] ?? '')
               .toString(),
+      photoUrl: (json['photoUrl'] ??
+              json['photo_url'] ??
+              json['photoPath'] ??
+              json['photo_path'])
+          ?.toString(),
       marksObtained: json['marksObtained'] != null
           ? _toInt(json['marksObtained'])
           : json['marks_obtained'] != null

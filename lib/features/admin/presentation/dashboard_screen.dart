@@ -6,7 +6,6 @@ import 'package:mobile_app/app_config.dart';
 import 'package:mobile_app/core/widgets/dashboard_avatar.dart';
 import 'package:mobile_app/features/admin/domain/dashboard_model.dart';
 import 'package:mobile_app/features/admin/providers/dashboard_provider.dart';
-import 'package:mobile_app/features/auth/domain/user_model.dart';
 import 'package:mobile_app/features/auth/providers/auth_provider.dart';
 
 class DashboardScreen extends ConsumerWidget {
@@ -163,193 +162,16 @@ class DashboardScreen extends ConsumerWidget {
 
             // ── Body ─────────────────────────────────────────────────────
             SliverToBoxAdapter(
-              child: user?.role == AppRole.teacher
-                  ? _TeacherDashboardContent(primary: primary)
-                  : statsAsync.when(
-                      loading: () => const _DashboardSkeleton(),
-                      error: (error, _) => _ErrorState(
-                        message: error.toString(),
-                        onRetry: () =>
-                            ref.refresh(dashboardStatsProvider.future),
-                      ),
-                      data: (stats) =>
-                          _DashboardContent(stats: stats, primary: primary),
-                    ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ── Teacher dashboard content ─────────────────────────────────────────────────
-
-class _TeacherDashboardContent extends StatelessWidget {
-  const _TeacherDashboardContent({required this.primary});
-  final Color primary;
-
-  @override
-  Widget build(BuildContext context) {
-    final size = MediaQuery.sizeOf(context);
-    final isSmalPhone = size.width < 400;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SizedBox(height: 20),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              SizedBox(
-                width: isSmalPhone
-                    ? (size.width - 32) / 2 - 4
-                    : (size.width - 48) / 4,
-                child: _QuickAction(
-                  icon: Icons.calendar_view_week_rounded,
-                  label: 'Timetable',
-                  color: const Color(0xFF3B82F6),
-                  onTap: () => context.go('/admin/timetable/my'),
+              child: statsAsync.when(
+                loading: () => const _DashboardSkeleton(),
+                error: (error, _) => _ErrorState(
+                  message: error.toString(),
+                  onRetry: () => ref.refresh(dashboardStatsProvider.future),
                 ),
-              ),
-              SizedBox(
-                width: isSmalPhone
-                    ? (size.width - 32) / 2 - 4
-                    : (size.width - 48) / 4,
-                child: _QuickAction(
-                  icon: Icons.fact_check_rounded,
-                  label: 'Attendance',
-                  color: const Color(0xFF10B981),
-                  onTap: () => context.go('/admin/attendance/my-class'),
-                ),
-              ),
-              SizedBox(
-                width: isSmalPhone
-                    ? (size.width - 32) / 2 - 4
-                    : (size.width - 48) / 4,
-                child: _QuickAction(
-                  icon: Icons.assignment_rounded,
-                  label: 'Marks',
-                  color: const Color(0xFFF59E0B),
-                  onTap: () => context.go('/admin/exams/marks'),
-                ),
-              ),
-              SizedBox(
-                width: isSmalPhone
-                    ? (size.width - 32) / 2 - 4
-                    : (size.width - 48) / 4,
-                child: _QuickAction(
-                  icon: Icons.event_rounded,
-                  label: 'Calendar',
-                  color: const Color(0xFF8B5CF6),
-                  onTap: () => context.go('/admin/calendar'),
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 24),
-        const _SectionHeader(
-            title: 'Teacher Portal', icon: Icons.school_rounded),
-        const SizedBox(height: 12),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Column(
-            children: [
-              _TeacherMenuTile(
-                icon: Icons.people_outlined,
-                label: 'My Class Students',
-                subtitle: 'View your class roster',
-                color: const Color(0xFF3B82F6),
-                onTap: () => context.go('/admin/students/my-class'),
-              ),
-              const SizedBox(height: 10),
-              _TeacherMenuTile(
-                icon: Icons.person_outlined,
-                label: 'My Attendance',
-                subtitle: 'View your attendance record',
-                color: const Color(0xFF10B981),
-                onTap: () => context.go('/admin/attendance/my-attendance'),
-              ),
-              const SizedBox(height: 10),
-              _TeacherMenuTile(
-                icon: Icons.bar_chart_rounded,
-                label: 'Report Cards',
-                subtitle: 'View class report cards',
-                color: const Color(0xFF8B5CF6),
-                onTap: () => context.go('/admin/exams/report-cards'),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 40),
-      ],
-    );
-  }
-}
-
-class _TeacherMenuTile extends StatelessWidget {
-  const _TeacherMenuTile({
-    required this.icon,
-    required this.label,
-    required this.subtitle,
-    required this.color,
-    required this.onTap,
-  });
-  final IconData icon;
-  final String label;
-  final String subtitle;
-  final Color color;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: cs.surface,
-          borderRadius: BorderRadius.circular(14),
-          boxShadow: [
-            BoxShadow(
-              color: color.withValues(alpha: 0.08),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(icon, color: color, size: 20),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(label,
-                      style: const TextStyle(
-                          fontWeight: FontWeight.w600, fontSize: 14)),
-                  Text(subtitle,
-                      style: TextStyle(
-                          fontSize: 12, color: cs.onSurfaceVariant)),
-                ],
+                data: (stats) =>
+                    _DashboardContent(stats: stats, primary: primary),
               ),
             ),
-            Icon(Icons.chevron_right_rounded,
-                color: cs.onSurfaceVariant, size: 20),
           ],
         ),
       ),

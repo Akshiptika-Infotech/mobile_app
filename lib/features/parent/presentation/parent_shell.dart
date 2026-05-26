@@ -1,50 +1,104 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile_app/app_config.dart';
+import 'package:mobile_app/features/parent/providers/parent_providers.dart';
 
-class ParentShell extends StatelessWidget {
+/// Bottom-nav shell for the parent portal. Also force-loads the children
+/// list at session start so [selectedChildIdProvider] can default to the
+/// first child on first render.
+class ParentShell extends ConsumerWidget {
   const ParentShell({super.key, required this.child});
 
   final Widget child;
 
   static const _tabs = [
-    _TabItem(label: 'Dashboard', icon: Icons.dashboard_outlined,
-        activeIcon: Icons.dashboard, path: '/parent/dashboard'),
-    _TabItem(label: 'Receipts', icon: Icons.article_outlined,
-        activeIcon: Icons.article, path: '/parent/receipts'),
-    _TabItem(label: 'Timetable', icon: Icons.calendar_view_week_outlined,
-        activeIcon: Icons.calendar_view_week, path: '/parent/timetable'),
-    _TabItem(label: 'Calendar', icon: Icons.calendar_month_outlined,
-        activeIcon: Icons.calendar_month, path: '/parent/calendar'),
-    _TabItem(label: 'Profile', icon: Icons.person_outlined,
-        activeIcon: Icons.person, path: '/parent/profile'),
+    _TabItem(
+      label: 'Home',
+      icon: Icons.dashboard_outlined,
+      activeIcon: Icons.dashboard_rounded,
+      path: '/parent/dashboard',
+    ),
+    _TabItem(
+      label: 'Fees',
+      icon: Icons.account_balance_wallet_outlined,
+      activeIcon: Icons.account_balance_wallet_rounded,
+      path: '/parent/fees',
+    ),
+    _TabItem(
+      label: 'Attendance',
+      icon: Icons.fact_check_outlined,
+      activeIcon: Icons.fact_check_rounded,
+      path: '/parent/attendance',
+    ),
+    _TabItem(
+      label: 'Bus',
+      icon: Icons.directions_bus_outlined,
+      activeIcon: Icons.directions_bus_rounded,
+      path: '/parent/transport',
+    ),
+    _TabItem(
+      label: 'More',
+      icon: Icons.apps_outlined,
+      activeIcon: Icons.apps_rounded,
+      path: '/parent/more',
+    ),
   ];
 
   int _selectedIndex(String location) {
+    var bestIndex = 0;
+    var bestLen = 0;
     for (var i = 0; i < _tabs.length; i++) {
-      if (location.startsWith(_tabs[i].path)) return i;
+      final p = _tabs[i].path;
+      if (location.startsWith(p) && p.length > bestLen) {
+        bestIndex = i;
+        bestLen = p.length;
+      }
     }
-    return 0;
+    return bestIndex;
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Watch children so the selected-child default is populated by the time
+    // any tab needs it. We don't render based on the result here.
+    ref.watch(childrenProvider);
+
     final location = GoRouterState.of(context).matchedLocation;
     final selectedIndex = _selectedIndex(location);
+    final brand = AppConfigScope.of(context).primaryColor;
 
     return Scaffold(
       restorationId: 'parent_shell',
       body: child,
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: selectedIndex,
-        onDestinationSelected: (index) =>
-            context.go(_tabs[index].path),
-        destinations: _tabs
-            .map((t) => NavigationDestination(
-                  icon: Icon(t.icon),
-                  selectedIcon: Icon(t.activeIcon),
-                  label: t.label,
-                ))
-            .toList(),
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: brand,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.10),
+              blurRadius: 8,
+              offset: const Offset(0, -2),
+            ),
+          ],
+        ),
+        child: NavigationBar(
+          selectedIndex: selectedIndex,
+          onDestinationSelected: (i) => context.go(_tabs[i].path),
+          height: 64,
+          backgroundColor: brand,
+          surfaceTintColor: Colors.transparent,
+          indicatorColor: Colors.white.withValues(alpha: 0.20),
+          labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+          destinations: _tabs
+              .map((t) => NavigationDestination(
+                    icon: Icon(t.icon,
+                        color: Colors.white.withValues(alpha: 0.7)),
+                    selectedIcon: Icon(t.activeIcon, color: Colors.white),
+                    label: t.label,
+                  ))
+              .toList(),
+        ),
       ),
     );
   }

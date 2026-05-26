@@ -26,8 +26,6 @@ class _StudentIdCardsScreenState extends ConsumerState<StudentIdCardsScreen> {
       backgroundColor: cs.surfaceContainerLowest,
       appBar: AppBar(
         title: const Text('Student ID Cards'),
-        backgroundColor: cs.surface,
-        surfaceTintColor: cs.surfaceTint,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh_rounded),

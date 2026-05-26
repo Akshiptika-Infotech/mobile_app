@@ -91,8 +91,6 @@ class _StudentAttendanceScreenState extends ConsumerState<StudentAttendanceScree
       backgroundColor: cs.surfaceContainerLowest,
       appBar: AppBar(
         title: const Text('Student Attendance'),
-        backgroundColor: cs.surface,
-        surfaceTintColor: cs.surfaceTint,
       ),
       body: Column(
         children: [

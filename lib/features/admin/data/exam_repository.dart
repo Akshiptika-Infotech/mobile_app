@@ -21,26 +21,82 @@ class ExamRepository {
         .toList();
   }
 
-  Future<List<StudentMark>> fetchStudentMarks(String subjectId) async {
+  Future<List<StudentMark>> fetchStudentMarks(ExamSubject subject) async {
     final response = await _dio.get(
       '/api/admin/exams/marks',
-      queryParameters: {'subjectId': subjectId},
+      queryParameters: {
+        'examTypeId': subject.examTypeId,
+        'subjectId': subject.subjectId,
+        'classId': subject.classId,
+        if (subject.sectionId != null) 'sectionId': subject.sectionId,
+      },
     );
-    final data = response.data;
+    return _parseMarksResponse(response.data, subject.subjectId);
+  }
+
+  Future<void> submitMarks(
+    ExamSubject subject,
+    List<Map<String, dynamic>> marks,
+  ) async {
+    final rows = marks
+        .where((m) => m['marksObtained'] != null)
+        .map((m) => {
+              'studentId': m['studentId'],
+              'subjectId': subject.subjectId,
+              'marksObtained': m['marksObtained'],
+              'status': 'SUBMITTED',
+            })
+        .toList();
+    await _dio.post(
+      '/api/admin/exams/marks',
+      data: {'examTypeId': subject.examTypeId, 'rows': rows},
+    );
+  }
+
+  /// Parses `{ students, marks }` where `marks` is keyed by `${studentId}_${subjectId}`.
+  /// Falls back to a flat list if the backend ever returns that shape.
+  static List<StudentMark> _parseMarksResponse(dynamic data, String subjectId) {
+    if (data is Map<String, dynamic> &&
+        data['students'] is List &&
+        data['marks'] is Map) {
+      final students = data['students'] as List;
+      final marksMap = data['marks'] as Map;
+      return students.map((raw) {
+        final s = raw as Map<String, dynamic>;
+        final id = (s['id'] ?? '').toString();
+        final first = (s['firstName'] ?? '').toString();
+        final last = (s['lastName'] ?? '').toString();
+        final name = '$first $last'.trim();
+        final mark = marksMap['${id}_$subjectId'];
+        int? marksObtained;
+        String? grade;
+        if (mark is Map) {
+          final m = mark['marksObtained'];
+          if (m is num) {
+            marksObtained = m.toInt();
+          } else if (m != null) {
+            marksObtained = int.tryParse(m.toString());
+          }
+          grade = mark['grade']?.toString();
+        }
+        return StudentMark(
+          studentId: id,
+          studentName: name.isNotEmpty ? name : (s['name'] ?? '').toString(),
+          admissionNumber: (s['admissionNumber'] ?? '').toString(),
+          photoUrl: (s['photoUrl'] ??
+                  s['photo_url'] ??
+                  s['photoPath'] ??
+                  s['photo_path'])
+              ?.toString(),
+          marksObtained: marksObtained,
+          grade: grade,
+        );
+      }).toList();
+    }
     final list = _extractList(data);
     return list
         .map((e) => StudentMark.fromJson(e as Map<String, dynamic>))
         .toList();
-  }
-
-  Future<void> submitMarks(
-    String subjectId,
-    List<Map<String, dynamic>> marks,
-  ) async {
-    await _dio.post(
-      '/api/admin/exams/marks',
-      data: {'subjectId': subjectId, 'marks': marks},
-    );
   }
 
   Future<List<ReportCard>> fetchReportCards(String classId) async {

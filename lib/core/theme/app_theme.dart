@@ -37,9 +37,11 @@ class AppTheme {
           : const Color(0xFFF7F8FB),
       textTheme: textTheme,
 
-      // ── App bar — primary background, white content ─────────────────────
+      // ── App bar — brand-coloured background with white content. Uses
+      //    the raw flavor `seed` colour (not `cs.primary`) so every
+      //    AppBar matches the dashboard header exactly. ─────────────────
       appBarTheme: AppBarTheme(
-        backgroundColor: cs.primary,
+        backgroundColor: seed,
         foregroundColor: Colors.white,
         elevation: 0,
         scrolledUnderElevation: 0.5,
@@ -55,8 +57,7 @@ class AppTheme {
         actionsIconTheme: const IconThemeData(color: Colors.white),
       ),
 
-      // ── Tab bar — readable on primary backgrounds (the "Personal /
-      //    Academic / Parent" tabs were unreadable before) ─────────────────
+      // ── Tab bar — paired with the brand-coloured AppBar above. ──────
       tabBarTheme: TabBarThemeData(
         labelColor: Colors.white,
         unselectedLabelColor: Colors.white.withValues(alpha: 0.72),
@@ -72,15 +73,15 @@ class AppTheme {
 
       // ── Bottom navigation (each role's shell uses NavigationBar) ────────
       navigationBarTheme: NavigationBarThemeData(
-        backgroundColor: isDark ? cs.surfaceContainer : Colors.white,
-        indicatorColor: cs.primary.withValues(alpha: 0.14),
+        backgroundColor: seed,
+        indicatorColor: Colors.white.withValues(alpha: 0.18),
         elevation: 6,
         height: 64,
         surfaceTintColor: Colors.transparent,
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           final selected = states.contains(WidgetState.selected);
           return TextStyle(
-            color: selected ? cs.primary : cs.onSurfaceVariant,
+            color: selected ? Colors.white : Colors.white.withValues(alpha: 0.7),
             fontSize: 11,
             fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
             letterSpacing: 0.15,
@@ -89,16 +90,17 @@ class AppTheme {
         iconTheme: WidgetStateProperty.resolveWith((states) {
           final selected = states.contains(WidgetState.selected);
           return IconThemeData(
-            color: selected ? cs.primary : cs.onSurfaceVariant,
+            color: selected ? Colors.white : Colors.white.withValues(alpha: 0.7),
             size: 24,
           );
         }),
       ),
 
-      // ── Buttons ─────────────────────────────────────────────────────────
+      // ── Buttons — use the raw brand colour so primary CTAs match the
+      //    AppBar / bottom-nav exactly. ─────────────────────────────────
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: cs.primary,
+          backgroundColor: seed,
           foregroundColor: Colors.white,
           minimumSize: const Size.fromHeight(48),
           textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14, letterSpacing: 0.2),
@@ -108,7 +110,7 @@ class AppTheme {
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: cs.primary,
+          backgroundColor: seed,
           foregroundColor: Colors.white,
           minimumSize: const Size.fromHeight(48),
           textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14, letterSpacing: 0.2),
@@ -117,7 +119,7 @@ class AppTheme {
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: cs.primary,
+          foregroundColor: seed,
           minimumSize: const Size.fromHeight(48),
           textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
           side: BorderSide(color: cs.outlineVariant, width: 1.2),
@@ -126,7 +128,7 @@ class AppTheme {
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: cs.primary,
+          foregroundColor: seed,
           textStyle: const TextStyle(fontWeight: FontWeight.w600),
         ),
       ),

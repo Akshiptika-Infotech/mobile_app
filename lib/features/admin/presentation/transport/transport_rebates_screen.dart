@@ -78,8 +78,6 @@ class _TransportRebatesScreenState extends ConsumerState<TransportRebatesScreen>
       backgroundColor: cs.surfaceContainerLowest,
       appBar: AppBar(
         title: const Text('Transport Rebates'),
-        backgroundColor: cs.surface,
-        surfaceTintColor: cs.surfaceTint,
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _showAdd,

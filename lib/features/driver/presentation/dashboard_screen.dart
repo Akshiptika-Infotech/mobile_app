@@ -1,125 +1,53 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:mobile_app/core/utils/responsive_utils.dart';
-import 'package:mobile_app/core/widgets/dashboard_avatar.dart';
-import 'package:mobile_app/features/auth/providers/auth_provider.dart';
-import 'package:mobile_app/features/driver/domain/driver_model.dart';
-import 'package:mobile_app/features/driver/providers/driver_provider.dart';
+import 'package:mobile_app/app_config.dart';
+import 'package:mobile_app/features/driver/domain/driver_route_model.dart';
+import 'package:mobile_app/features/driver/domain/driver_trip_model.dart';
+import 'package:mobile_app/features/driver/providers/driver_providers.dart';
 
-class DashboardScreen extends ConsumerWidget {
-  const DashboardScreen({super.key});
+class DriverDashboardScreen extends ConsumerWidget {
+  const DriverDashboardScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final user = ref.watch(currentUserProvider);
-    final tripAsync = ref.watch(driverTripProvider);
     final cs = Theme.of(context).colorScheme;
-    final today = DateFormat('EEEE, d MMMM yyyy').format(DateTime.now());
+    final brand = AppConfigScope.of(context).primaryColor;
+    final routeAsync = ref.watch(driverRouteProvider);
+    final tripsAsync = ref.watch(driverTripsTodayProvider);
+    final profileAsync = ref.watch(driverProfileProvider);
+    final activeTrip = ref.watch(activeTripProvider);
 
     return Scaffold(
       backgroundColor: cs.surfaceContainerLowest,
+      appBar: AppBar(
+        title: const Text('Driver'),
+        centerTitle: false,
+      ),
       body: RefreshIndicator(
-        onRefresh: () => ref.refresh(driverTripProvider.future),
-        child: CustomScrollView(
-          slivers: [
-            // ── Header ────────────────────────────────────────────────────
-            SliverAppBar(
-              expandedHeight: ResponsiveUtils.getHeaderHeight(context),
-              pinned: true,
-              backgroundColor: const Color(0xFF1D4ED8),
-              elevation: 0,
-              actions: [
-                IconButton(
-                  tooltip: 'Profile',
-                  icon: const Icon(Icons.account_circle_outlined,
-                      color: Colors.white),
-                  onPressed: () => context.go('/driver/profile'),
-                ),
-                IconButton(
-                  tooltip: 'Sign out',
-                  icon: const Icon(Icons.logout_outlined, color: Colors.white),
-                  onPressed: () async {
-                    await ref.read(authProvider.notifier).logout();
-                    if (context.mounted) context.go('/login');
-                  },
-                ),
-              ],
-              flexibleSpace: FlexibleSpaceBar(
-                collapseMode: CollapseMode.pin,
-                background: Container(
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [Color(0xFF1D4ED8), Color(0xFF1E3A8A)],
-                    ),
-                  ),
-                  child: SafeArea(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Row(
-                            children: [
-                              DashboardAvatar(
-                                imageUrl: user?.image,
-                                backgroundColor:
-                                    Colors.white.withValues(alpha: 0.2),
-                                onTap: () => context.go('/driver/profile'),
-                                fallback: const Icon(
-                                    Icons.directions_bus_rounded,
-                                    color: Colors.white,
-                                    size: 20),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Hello, ${user?.name.split(' ').first ?? 'Driver'}',
-                                      style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.w700),
-                                    ),
-                                    Text(today,
-                                        style: TextStyle(
-                                            color: Colors.white
-                                                .withValues(alpha: 0.8),
-                                            fontSize: 12)),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
+        onRefresh: () async {
+          ref.invalidate(driverRouteProvider);
+          ref.invalidate(driverTripsTodayProvider);
+          ref.invalidate(driverProfileProvider);
+          await Future.delayed(const Duration(milliseconds: 300));
+        },
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+          children: [
+            _Greeting(profileAsync: profileAsync, brand: brand),
+            const SizedBox(height: 16),
+            if (activeTrip != null)
+              _ActiveTripBanner(trip: activeTrip, brand: brand),
+            const SizedBox(height: 16),
+            _TripsCard(
+              tripsAsync: tripsAsync,
+              routeAsync: routeAsync,
+              brand: brand,
             ),
-
-            // ── Body ──────────────────────────────────────────────────────
-            SliverPadding(
-              padding: const EdgeInsets.all(16),
-              sliver: SliverToBoxAdapter(
-                child: tripAsync.when(
-                  loading: () => const Center(
-                      heightFactor: 5, child: CircularProgressIndicator()),
-                  error: (e, _) => _ErrorCard(
-                    message: e.toString(),
-                    onRetry: () => ref.refresh(driverTripProvider.future),
-                  ),
-                  data: (trip) => _TripContent(trip: trip),
-                ),
-              ),
-            ),
+            const SizedBox(height: 16),
+            _RouteSummary(routeAsync: routeAsync),
           ],
         ),
       ),
@@ -127,245 +55,149 @@ class DashboardScreen extends ConsumerWidget {
   }
 }
 
-// ── Trip content ──────────────────────────────────────────────────────────────
-
-class _TripContent extends StatelessWidget {
-  const _TripContent({required this.trip});
-  final DriverTrip trip;
-
-  Color get _statusColor {
-    switch (trip.tripStatus.toLowerCase()) {
-      case 'active':
-        return const Color(0xFF10B981);
-      case 'completed':
-        return const Color(0xFF3B82F6);
-      default:
-        return const Color(0xFFF59E0B);
-    }
-  }
-
-  String get _statusLabel {
-    switch (trip.tripStatus.toLowerCase()) {
-      case 'active':
-        return 'Active';
-      case 'completed':
-        return 'Completed';
-      default:
-        return 'Not Started';
-    }
-  }
+class _Greeting extends StatelessWidget {
+  const _Greeting({required this.profileAsync, required this.brand});
+  final AsyncValue profileAsync;
+  final Color brand;
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Trip card
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: cs.surface,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: cs.shadow.withValues(alpha: 0.06),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text("Today's Trip",
-                            style: TextStyle(
-                                fontSize: 12, color: cs.onSurfaceVariant)),
-                        const SizedBox(height: 4),
-                        Text(
-                          trip.routeName.isEmpty ? 'No route assigned' : trip.routeName,
-                          style: const TextStyle(
-                              fontSize: 20, fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: _statusColor.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(_statusLabel,
-                        style: TextStyle(
-                            color: _statusColor,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 13)),
-                  ),
-                ],
-              ),
-              if (trip.vehicleNumber.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Icon(Icons.directions_bus_rounded,
-                        size: 14, color: cs.onSurfaceVariant),
-                    const SizedBox(width: 6),
-                    Text(trip.vehicleNumber,
-                        style: TextStyle(
-                            color: cs.onSurfaceVariant, fontSize: 13)),
-                  ],
-                ),
-              ],
-              const SizedBox(height: 20),
-              Row(
-                children: [
-                  Expanded(
-                    child: _TripStat(
-                      icon: Icons.location_on_rounded,
-                      label: 'Stoppages',
-                      value: '${trip.stoppageCount}',
-                      color: const Color(0xFF3B82F6),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _TripStat(
-                      icon: Icons.people_rounded,
-                      label: 'Students',
-                      value: '${trip.studentCount}',
-                      color: const Color(0xFF10B981),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 20),
-
-        // Quick actions
-        Text('Quick Actions',
-            style: Theme.of(context)
-                .textTheme
-                .titleSmall
-                ?.copyWith(fontWeight: FontWeight.bold)),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            _QuickAction(
-              icon: Icons.map_rounded,
-              label: 'My Route',
-              color: const Color(0xFF3B82F6),
-              onTap: () => context.go('/driver/route'),
-            ),
-            const SizedBox(width: 10),
-            _QuickAction(
-              icon: Icons.people_rounded,
-              label: 'Students',
-              color: const Color(0xFF10B981),
-              onTap: () => context.go('/driver/students'),
-            ),
-            const SizedBox(width: 10),
-            _QuickAction(
-              icon: Icons.fact_check_rounded,
-              label: 'Attendance',
-              color: const Color(0xFFF59E0B),
-              onTap: () => context.go('/driver/attendance'),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-class _TripStat extends StatelessWidget {
-  const _TripStat({
-    required this.icon,
-    required this.label,
-    required this.value,
-    required this.color,
-  });
-  final IconData icon;
-  final String label;
-  final String value;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
+    final greeting = _greetingFor(DateTime.now().hour);
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(14),
+        color: brand,
+        borderRadius: BorderRadius.circular(18),
       ),
       child: Row(
         children: [
-          Icon(icon, color: color, size: 22),
-          const SizedBox(width: 10),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(value,
-                  style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: color)),
-              Text(label,
-                  style: TextStyle(
-                      fontSize: 11, color: cs.onSurfaceVariant)),
-            ],
+          profileAsync.when(
+            data: (p) => _Avatar(name: p.name, imageUrl: p.imageUrl),
+            loading: () => const CircleAvatar(
+                radius: 24, backgroundColor: Colors.white24),
+            error: (_, __) => const CircleAvatar(
+                radius: 24,
+                backgroundColor: Colors.white24,
+                child: Icon(Icons.person, color: Colors.white)),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(greeting,
+                    style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.8),
+                        fontSize: 13)),
+                profileAsync.when(
+                  data: (p) => Text(p.name,
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700)),
+                  loading: () => const SizedBox(
+                      height: 22, child: LinearProgressIndicator()),
+                  error: (_, __) => Text('Driver',
+                      style: TextStyle(
+                          color: cs.onPrimary,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700)),
+                ),
+                Text(DateFormat('EEEE, d MMM').format(DateTime.now()),
+                    style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.85),
+                        fontSize: 12)),
+              ],
+            ),
           ),
         ],
       ),
     );
   }
+
+  static String _greetingFor(int h) {
+    if (h < 12) return 'Good morning';
+    if (h < 17) return 'Good afternoon';
+    return 'Good evening';
+  }
 }
 
-class _QuickAction extends StatelessWidget {
-  const _QuickAction({
-    required this.icon,
-    required this.label,
-    required this.color,
-    required this.onTap,
-  });
-  final IconData icon;
-  final String label;
-  final Color color;
-  final VoidCallback onTap;
+class _Avatar extends StatelessWidget {
+  const _Avatar({required this.name, this.imageUrl});
+  final String name;
+  final String? imageUrl;
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
+    final initial = name.isNotEmpty ? name[0].toUpperCase() : '?';
+    return CircleAvatar(
+      radius: 26,
+      backgroundColor: Colors.white24,
+      backgroundImage: (imageUrl != null && imageUrl!.isNotEmpty)
+          ? CachedNetworkImageProvider(imageUrl!)
+          : null,
+      child: (imageUrl == null || imageUrl!.isEmpty)
+          ? Text(initial,
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold))
+          : null,
+    );
+  }
+}
+
+class _ActiveTripBanner extends StatelessWidget {
+  const _ActiveTripBanner({required this.trip, required this.brand});
+  final DriverTrip trip;
+  final Color brand;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(16),
       child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
+        onTap: () => context.go('/driver/trip'),
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 14),
+          padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: color.withValues(alpha: 0.2)),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: brand.withValues(alpha: 0.4), width: 1.4),
           ),
-          child: Column(
+          child: Row(
             children: [
-              Icon(icon, color: color, size: 24),
-              const SizedBox(height: 6),
-              Text(label,
-                  style: TextStyle(
-                      fontSize: 11,
-                      color: color,
-                      fontWeight: FontWeight.w600)),
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: brand.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(Icons.directions_bus_rounded,
+                    color: brand, size: 24),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('${trip.tripType.label} trip in progress',
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w700, fontSize: 14)),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${trip.markedCount} / ${trip.attendance.length} students marked',
+                      style: TextStyle(
+                          fontSize: 12,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.arrow_forward_rounded, color: brand),
             ],
           ),
         ),
@@ -374,32 +206,287 @@ class _QuickAction extends StatelessWidget {
   }
 }
 
-class _ErrorCard extends StatelessWidget {
-  const _ErrorCard({required this.message, required this.onRetry});
-  final String message;
-  final VoidCallback onRetry;
+class _TripsCard extends ConsumerWidget {
+  const _TripsCard({
+    required this.tripsAsync,
+    required this.routeAsync,
+    required this.brand,
+  });
+  final AsyncValue<List<DriverTrip>> tripsAsync;
+  final AsyncValue<DriverRoute?> routeAsync;
+  final Color brand;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.event_available_rounded, color: brand, size: 20),
+                const SizedBox(width: 8),
+                const Text("Today's Trips",
+                    style: TextStyle(
+                        fontWeight: FontWeight.w700, fontSize: 15)),
+              ],
+            ),
+            const SizedBox(height: 12),
+            tripsAsync.when(
+              loading: () => const Padding(
+                padding: EdgeInsets.all(8),
+                child: LinearProgressIndicator(),
+              ),
+              error: (e, _) => Text('Failed to load: $e',
+                  style: const TextStyle(color: Colors.red)),
+              data: (trips) {
+                final morning = _find(trips, TripType.morning);
+                final evening = _find(trips, TripType.afternoon);
+                final route = routeAsync.value;
+                return Column(
+                  children: [
+                    _TripRow(
+                      type: TripType.morning,
+                      trip: morning,
+                      route: route,
+                      brand: brand,
+                      ref: ref,
+                    ),
+                    const Divider(height: 24),
+                    _TripRow(
+                      type: TripType.afternoon,
+                      trip: evening,
+                      route: route,
+                      brand: brand,
+                      ref: ref,
+                    ),
+                  ],
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  static DriverTrip? _find(List<DriverTrip> trips, TripType type) {
+    for (final t in trips) {
+      if (t.tripType == type) return t;
+    }
+    return null;
+  }
+}
+
+class _TripRow extends StatelessWidget {
+  const _TripRow({
+    required this.type,
+    required this.trip,
+    required this.route,
+    required this.brand,
+    required this.ref,
+  });
+  final TripType type;
+  final DriverTrip? trip;
+  final DriverRoute? route;
+  final Color brand;
+  final WidgetRef ref;
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    return Center(
+    final hasTrip = trip != null;
+    final canStart = !hasTrip && route != null;
+
+    return Row(
+      children: [
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: brand.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(
+            type == TripType.morning
+                ? Icons.wb_sunny_outlined
+                : Icons.wb_twilight_rounded,
+            color: brand,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(type.label,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.w600, fontSize: 14)),
+              const SizedBox(height: 2),
+              if (hasTrip)
+                _StatusPill(status: trip!.status)
+              else
+                Text('Not started',
+                    style: TextStyle(
+                        fontSize: 12, color: cs.onSurfaceVariant)),
+            ],
+          ),
+        ),
+        if (hasTrip && trip!.isActive)
+          FilledButton.tonalIcon(
+            onPressed: () => context.go('/driver/trip'),
+            icon: const Icon(Icons.arrow_forward_rounded, size: 16),
+            label: const Text('Resume'),
+            style: _compactButtonStyle,
+          )
+        else if (hasTrip && trip!.isCompleted)
+          Chip(
+              label: const Text('Done',
+                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
+              backgroundColor: const Color(0xFF10B981).withValues(alpha: 0.15),
+              side: BorderSide.none)
+        else if (canStart)
+          FilledButton.icon(
+            onPressed: () => _startTrip(context),
+            icon: const Icon(Icons.play_arrow_rounded, size: 18),
+            label: const Text('Start'),
+            style: _compactButtonStyle,
+          )
+        else
+          OutlinedButton(
+            onPressed: null,
+            style: _compactButtonStyle,
+            child: const Text('No route'),
+          ),
+      ],
+    );
+  }
+
+  /// The app theme sets `minimumSize: Size.fromHeight(48)` which Flutter
+  /// resolves to `Size(double.infinity, 48)` — infinite minimum width. That
+  /// blows up when these buttons sit inside a `Row`. Clamp the minimum here
+  /// so trailing actions size to their content.
+  static final ButtonStyle _compactButtonStyle = ButtonStyle(
+    minimumSize: WidgetStateProperty.all(const Size(0, 40)),
+    padding: WidgetStateProperty.all(
+      const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+    ),
+    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+  );
+
+  Future<void> _startTrip(BuildContext context) async {
+    final routeId = route?.id;
+    if (routeId == null) return;
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await ref
+          .read(startTripControllerProvider)
+          .start(routeId: routeId, type: type);
+      if (context.mounted) context.go('/driver/trip');
+    } catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text('Could not start: $e')));
+    }
+  }
+}
+
+class _StatusPill extends StatelessWidget {
+  const _StatusPill({required this.status});
+  final TripStatus status;
+
+  @override
+  Widget build(BuildContext context) {
+    final cfg = switch (status) {
+      TripStatus.scheduled => (
+          const Color(0xFF6366F1),
+          'Scheduled'
+        ),
+      TripStatus.inProgress => (
+          const Color(0xFFF59E0B),
+          'In progress'
+        ),
+      TripStatus.completed => (
+          const Color(0xFF10B981),
+          'Completed'
+        ),
+      TripStatus.cancelled => (
+          const Color(0xFFEF4444),
+          'Cancelled'
+        ),
+    };
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: cfg.$1.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(cfg.$2,
+          style: TextStyle(
+              color: cfg.$1,
+              fontWeight: FontWeight.w700,
+              fontSize: 11,
+              letterSpacing: 0.3)),
+    );
+  }
+}
+
+class _RouteSummary extends StatelessWidget {
+  const _RouteSummary({required this.routeAsync});
+  final AsyncValue<DriverRoute?> routeAsync;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Card(
       child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          children: [
-            Icon(Icons.cloud_off_rounded, size: 48, color: cs.error),
-            const SizedBox(height: 12),
-            Text(message,
-                textAlign: TextAlign.center,
-                style: TextStyle(color: cs.onSurfaceVariant),
-                maxLines: 3),
-            const SizedBox(height: 16),
-            FilledButton.icon(
-              onPressed: onRetry,
-              icon: const Icon(Icons.refresh_rounded),
-              label: const Text('Retry'),
-            ),
-          ],
+        padding: const EdgeInsets.all(16),
+        child: routeAsync.when(
+          loading: () => const SizedBox(
+              height: 60,
+              child: Center(child: CircularProgressIndicator())),
+          error: (e, _) => Text('Failed to load route: $e',
+              style: const TextStyle(color: Colors.red)),
+          data: (route) {
+            if (route == null) {
+              return Row(
+                children: [
+                  Icon(Icons.info_outline_rounded,
+                      color: cs.onSurfaceVariant),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                      child: Text(
+                          'No route assigned. Contact the school office.')),
+                ],
+              );
+            }
+            return Row(
+              children: [
+                Icon(Icons.alt_route_rounded, color: cs.primary),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(route.name,
+                          style: const TextStyle(
+                              fontWeight: FontWeight.w700, fontSize: 14)),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${route.stoppages.length} stops · ${route.totalStudents} students',
+                        style: TextStyle(
+                            fontSize: 12, color: cs.onSurfaceVariant),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.chevron_right_rounded),
+                  onPressed: () => context.go('/driver/route'),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );

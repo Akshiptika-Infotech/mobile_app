@@ -102,8 +102,6 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
       backgroundColor: cs.surfaceContainerLowest,
       appBar: AppBar(
         title: Text(_title),
-        backgroundColor: cs.surface,
-        surfaceTintColor: cs.surfaceTint,
         actions: [
           reportAsync.whenOrNull(
             data: (rows) => IconButton(

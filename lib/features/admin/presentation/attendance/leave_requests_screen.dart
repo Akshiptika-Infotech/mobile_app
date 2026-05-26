@@ -23,8 +23,6 @@ class LeaveRequestsScreen extends ConsumerWidget {
       backgroundColor: cs.surfaceContainerLowest,
       appBar: AppBar(
         title: const Text('Leave Requests'),
-        backgroundColor: cs.surface,
-        surfaceTintColor: cs.surfaceTint,
       ),
       body: data.when(
         loading: () => Padding(

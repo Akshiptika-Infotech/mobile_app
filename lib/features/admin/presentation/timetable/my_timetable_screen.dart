@@ -50,8 +50,6 @@ class _MyTimetableScreenState extends ConsumerState<MyTimetableScreen>
       appBar: AppBar(
         title: const Text('My Timetable'),
         centerTitle: false,
-        backgroundColor: cs.surface,
-        surfaceTintColor: cs.surfaceTint,
         bottom: TabBar(
           controller: _tabController,
           isScrollable: true,

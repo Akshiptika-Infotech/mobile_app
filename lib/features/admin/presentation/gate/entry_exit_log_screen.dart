@@ -35,8 +35,6 @@ class _EntryExitLogScreenState extends ConsumerState<EntryExitLogScreen> {
       backgroundColor: cs.surfaceContainerLowest,
       appBar: AppBar(
         title: const Text('Entry/Exit Log'),
-        backgroundColor: cs.surface,
-        surfaceTintColor: cs.surfaceTint,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh_rounded),

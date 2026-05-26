@@ -89,5 +89,5 @@ class AppRole {
   static const parent = 'PARENT';
   static const webAdmin = 'WEB_ADMIN';
 
-  static const adminRoles = {superAdmin, admin, clerk, teacher};
+  static const adminRoles = {superAdmin, admin, clerk};
 }

@@ -20,16 +20,19 @@ class MarkAttendanceScreen extends ConsumerWidget {
     final classesAsync = ref.watch(classesProvider);
     final dateStr = DateFormat('yyyy-MM-dd').format(state.date);
 
+    final loc = GoRouterState.of(context).matchedLocation;
+    final routePrefix = loc.startsWith('/teacher') ? '/teacher' : '/admin';
+
     void openQrScanner() {
       final years = yearsAsync.valueOrNull ?? [];
       final classes = classesAsync.valueOrNull ?? [];
       if (years.isEmpty || classes.isEmpty) {
-        context.push('/admin/attendance/qr-setup');
+        context.push('$routePrefix/attendance/qr-setup');
         return;
       }
       final year = years.firstWhere((y) => y.isActive, orElse: () => years.first);
       final cls = classes.first;
-      context.push('/admin/attendance/qr-scan', extra: QrScanParams(
+      context.push('$routePrefix/attendance/qr-scan', extra: QrScanParams(
         classId: cls.id,
         className: cls.name,
         academicYearId: year.id,
@@ -42,9 +45,6 @@ class MarkAttendanceScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Mark Attendance'),
         centerTitle: false,
-        backgroundColor: cs.surface,
-        foregroundColor: cs.onSurface,
-        surfaceTintColor: cs.surfaceTint,
         actions: [
           if (!state.submitted && !state.locked && state.students.isNotEmpty)
             TextButton.icon(

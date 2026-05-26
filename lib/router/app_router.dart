@@ -35,9 +35,7 @@ import 'package:mobile_app/features/admin/presentation/reception/reception_call_
 import 'package:mobile_app/features/admin/presentation/reception/reception_late_arrivals_admin_screen.dart';
 import 'package:mobile_app/features/admin/presentation/reports/report_screen.dart';
 import 'package:mobile_app/features/admin/presentation/settings/settings_screen.dart';
-import 'package:mobile_app/features/admin/presentation/students/student_add_screen.dart';
 import 'package:mobile_app/features/admin/presentation/students/student_detail_screen.dart';
-import 'package:mobile_app/features/admin/presentation/students/student_edit_screen.dart';
 import 'package:mobile_app/features/admin/presentation/students/my_class_students_screen.dart';
 import 'package:mobile_app/features/admin/presentation/students/students_list_screen.dart';
 import 'package:mobile_app/features/admin/presentation/timetable/my_timetable_screen.dart';
@@ -54,54 +52,48 @@ import 'package:mobile_app/features/admin/presentation/face/face_scan_screen.dar
 import 'package:mobile_app/features/admin/presentation/more_screen.dart';
 import 'package:mobile_app/features/admin/presentation/users/users_screen.dart';
 import 'package:mobile_app/features/admin/domain/attendance_model.dart';
-import 'package:mobile_app/features/security/presentation/face_verify_screen.dart';
-import 'package:mobile_app/features/driver/presentation/bus_attendance_screen.dart';
-import 'package:mobile_app/features/driver/presentation/route_screen.dart';
-import 'package:mobile_app/features/driver/presentation/student_roster_screen.dart';
-import 'package:mobile_app/features/security/presentation/entry_exit_screen.dart';
-import 'package:mobile_app/features/security/presentation/gate_passes_screen.dart';
-import 'package:mobile_app/features/security/presentation/visitors_screen.dart';
 import 'package:mobile_app/features/auth/domain/user_model.dart';
 import 'package:mobile_app/features/auth/presentation/login_screen.dart';
 import 'package:mobile_app/features/auth/providers/auth_provider.dart';
+import 'package:mobile_app/features/profile/presentation/profile_screen.dart';
+import 'package:mobile_app/features/teacher/presentation/dashboard_screen.dart'
+    as teacher;
+import 'package:mobile_app/features/teacher/presentation/exams_hub_screen.dart';
+import 'package:mobile_app/features/teacher/presentation/leave_request_screen.dart';
+import 'package:mobile_app/features/teacher/presentation/more_screen.dart'
+    as teacher_more;
+import 'package:mobile_app/features/teacher/presentation/teacher_shell.dart';
 import 'package:mobile_app/features/driver/presentation/dashboard_screen.dart'
     as driver;
 import 'package:mobile_app/features/driver/presentation/driver_shell.dart';
-import 'package:mobile_app/features/parent/presentation/dashboard_screen.dart'
-    as parent;
-import 'package:mobile_app/features/parent/presentation/parent_calendar_screen.dart';
-import 'package:mobile_app/features/parent/presentation/parent_shell.dart';
-import 'package:mobile_app/features/parent/presentation/parent_timetable_screen.dart';
-import 'package:mobile_app/features/profile/presentation/profile_screen.dart';
-import 'package:mobile_app/features/reception/presentation/appointments_screen.dart';
-import 'package:mobile_app/features/reception/presentation/call_log_screen.dart';
-import 'package:mobile_app/features/reception/presentation/dashboard_screen.dart'
-    as reception;
-import 'package:mobile_app/features/reception/presentation/late_arrivals_screen.dart';
-import 'package:mobile_app/features/reception/presentation/reception_shell.dart';
-import 'package:mobile_app/features/reception/presentation/visitors_screen.dart'
-    as reception_visitors;
+import 'package:mobile_app/features/driver/presentation/more_screen.dart'
+    as driver_more;
+import 'package:mobile_app/features/driver/presentation/route_screen.dart';
+import 'package:mobile_app/features/driver/presentation/trip_screen.dart';
 import 'package:mobile_app/features/security/presentation/dashboard_screen.dart'
     as security;
+import 'package:mobile_app/features/security/presentation/entry_exit_log_screen.dart'
+    as security_log;
+import 'package:mobile_app/features/security/presentation/gate_passes_screen.dart';
+import 'package:mobile_app/features/security/presentation/log_entry_exit_screen.dart';
+import 'package:mobile_app/features/security/presentation/more_screen.dart'
+    as security_more;
+import 'package:mobile_app/features/security/presentation/register_visitor_screen.dart';
 import 'package:mobile_app/features/security/presentation/security_shell.dart';
-import 'package:mobile_app/features/student/presentation/dashboard_screen.dart'
-    as student;
-import 'package:mobile_app/features/student/presentation/fee_matrix_screen.dart';
-import 'package:mobile_app/features/student/presentation/receipts_screen.dart'
-    as student_receipts;
-import 'package:mobile_app/features/student/presentation/student_shell.dart';
-import 'package:mobile_app/features/student/presentation/transport_screen.dart';
-import 'package:mobile_app/features/parent/presentation/child_fees_screen.dart';
-import 'package:mobile_app/features/parent/presentation/receipts_screen.dart'
-    as parent_receipts;
-import 'package:mobile_app/features/web_admin/presentation/web_admin_shell.dart';
-import 'package:mobile_app/features/web_admin/presentation/web_admin_dashboard_screen.dart'
-    as web_admin;
-import 'package:mobile_app/features/web_admin/presentation/content_screen.dart';
-import 'package:mobile_app/features/web_admin/presentation/gallery_screen.dart';
-import 'package:mobile_app/features/web_admin/presentation/more_screen.dart';
-import 'package:mobile_app/features/web_admin/presentation/pages_screen.dart';
-import 'package:mobile_app/features/web_admin/presentation/website_settings_screen.dart';
+import 'package:mobile_app/features/security/presentation/visitors_screen.dart';
+import 'package:mobile_app/features/parent/presentation/attendance_screen.dart';
+import 'package:mobile_app/features/parent/presentation/calendar_screen.dart';
+import 'package:mobile_app/features/parent/presentation/dashboard_screen.dart'
+    as parent;
+import 'package:mobile_app/features/parent/presentation/fees_screen.dart';
+import 'package:mobile_app/features/parent/presentation/more_screen.dart'
+    as parent_more;
+import 'package:mobile_app/features/parent/presentation/parent_shell.dart';
+import 'package:mobile_app/features/parent/presentation/profile_screen.dart'
+    as parent_profile;
+import 'package:mobile_app/features/parent/presentation/receipts_screen.dart';
+import 'package:mobile_app/features/parent/presentation/timetable_screen.dart';
+import 'package:mobile_app/features/parent/presentation/transport_screen.dart';
 
 // ── Provider ──────────────────────────────────────────────────────────────────
 
@@ -121,8 +113,52 @@ final routerProvider = Provider<GoRouter>((ref) {
       if (authState is AuthUnauthenticated || authState is AuthError) {
         return isLoggingIn ? null : '/login';
       }
-      if (authState is AuthAuthenticated && isLoggingIn) {
-        return _homeForRole(authState.user.role);
+      if (authState is AuthAuthenticated) {
+        final role = authState.user.role;
+        final isAdmin = AppRole.adminRoles.contains(role);
+        final isTeacher = role == AppRole.teacher;
+        final isDriver = role == AppRole.driver;
+        final isSecurity = role == AppRole.securityGuard;
+        final isParent = role == AppRole.parent;
+        // Admin-family, teacher, driver, security and parent roles are wired
+        // up. Other portals will be reintroduced one by one.
+        if (!isAdmin && !isTeacher && !isDriver && !isSecurity && !isParent) {
+          Future.microtask(
+            () => ref.read(authProvider.notifier).logout(),
+          );
+          return '/login';
+        }
+        // Keep each role inside its own portal.
+        final loc = state.matchedLocation;
+        bool isOtherPortal(String prefix) =>
+            loc.startsWith('/admin') ||
+            loc.startsWith('/teacher') ||
+            loc.startsWith('/driver') ||
+            loc.startsWith('/security') ||
+            loc.startsWith('/parent')
+                ? !loc.startsWith(prefix)
+                : false;
+        if (isTeacher && isOtherPortal('/teacher')) {
+          return '/teacher/dashboard';
+        }
+        if (isAdmin && isOtherPortal('/admin')) {
+          return '/admin/dashboard';
+        }
+        if (isDriver && isOtherPortal('/driver')) {
+          return '/driver/dashboard';
+        }
+        if (isSecurity && isOtherPortal('/security')) {
+          return '/security/dashboard';
+        }
+        if (isParent && isOtherPortal('/parent')) {
+          return '/parent/dashboard';
+        }
+        if (isLoggingIn) {
+          if (isParent) return '/parent/dashboard';
+          if (isSecurity) return '/security/dashboard';
+          if (isDriver) return '/driver/dashboard';
+          return isTeacher ? '/teacher/dashboard' : '/admin/dashboard';
+        }
       }
       return null;
     },
@@ -145,13 +181,11 @@ final routerProvider = Provider<GoRouter>((ref) {
             builder: (_, __) => const ApprovalsScreen(),
           ),
           GoRoute(
+            // Add / edit student lives on the web admin portal — the mobile
+            // app is read-only for student records (plus teacher photo update).
             path: '/admin/students',
             builder: (_, __) => const StudentsListScreen(),
             routes: [
-              GoRoute(
-                path: 'new',
-                builder: (_, __) => const StudentAddScreen(),
-              ),
               GoRoute(
                 path: 'my-class',
                 builder: (_, __) => const MyClassStudentsScreen(),
@@ -160,13 +194,6 @@ final routerProvider = Provider<GoRouter>((ref) {
                 path: ':id',
                 builder: (_, state) =>
                     StudentDetailScreen(studentId: state.pathParameters['id']!),
-                routes: [
-                  GoRoute(
-                    path: 'edit',
-                    builder: (_, state) => StudentEditScreen(
-                        studentId: state.pathParameters['id']!),
-                  ),
-                ],
               ),
             ],
           ),
@@ -364,29 +391,108 @@ final routerProvider = Provider<GoRouter>((ref) {
         ],
       ),
 
+      // ── Teacher shell ────────────────────────────────────────────────────
+      ShellRoute(
+        builder: (context, state, child) => TeacherShell(child: child),
+        routes: [
+          GoRoute(
+            path: '/teacher/dashboard',
+            builder: (_, __) => const teacher.TeacherDashboardScreen(),
+          ),
+          GoRoute(
+            // Teachers can view their class roster and individual students,
+            // but can only update the student photo — full edit and add are
+            // admin/clerk only.
+            path: '/teacher/class',
+            builder: (_, __) => const MyClassStudentsScreen(),
+            routes: [
+              GoRoute(
+                path: ':id',
+                builder: (_, state) =>
+                    StudentDetailScreen(studentId: state.pathParameters['id']!),
+              ),
+            ],
+          ),
+          GoRoute(
+            path: '/teacher/attendance',
+            builder: (_, __) => const MarkAttendanceScreen(),
+            routes: [
+              GoRoute(
+                path: 'qr-setup',
+                builder: (_, __) => const QrScanSetupScreen(),
+              ),
+              GoRoute(
+                path: 'qr-scan',
+                builder: (_, state) =>
+                    QrScannerScreen(params: state.extra as QrScanParams),
+              ),
+              GoRoute(
+                path: 'qr-live',
+                builder: (_, state) =>
+                    QrLiveScreen(params: state.extra as QrScanParams),
+              ),
+            ],
+          ),
+          GoRoute(
+            path: '/teacher/exams',
+            builder: (_, __) => const TeacherExamsHubScreen(),
+            routes: [
+              GoRoute(
+                path: 'marks',
+                builder: (_, __) => const MarkEntryScreen(),
+              ),
+              GoRoute(
+                path: 'report-cards',
+                builder: (_, __) => const ReportCardsScreen(),
+              ),
+            ],
+          ),
+          GoRoute(
+            path: '/teacher/more',
+            builder: (_, __) => const teacher_more.TeacherMoreScreen(),
+          ),
+          GoRoute(
+            path: '/teacher/timetable',
+            builder: (_, __) => const MyTimetableScreen(),
+          ),
+          GoRoute(
+            path: '/teacher/calendar',
+            builder: (_, __) => const CalendarScreen(),
+          ),
+          GoRoute(
+            path: '/teacher/my-attendance',
+            builder: (_, __) => const MyAttendanceScreen(),
+          ),
+          GoRoute(
+            path: '/teacher/leaves',
+            builder: (_, __) => const TeacherLeaveScreen(),
+          ),
+          GoRoute(
+            path: '/teacher/profile',
+            builder: (_, __) => const ProfileScreen(),
+          ),
+        ],
+      ),
+
       // ── Driver shell ─────────────────────────────────────────────────────
       ShellRoute(
         builder: (context, state, child) => DriverShell(child: child),
         routes: [
           GoRoute(
             path: '/driver/dashboard',
-            builder: (_, __) => const driver.DashboardScreen(),
+            builder: (_, __) => const driver.DriverDashboardScreen(),
           ),
           GoRoute(
             path: '/driver/route',
-            builder: (_, __) => const RouteScreen(),
+            builder: (_, __) => const DriverRouteScreen(),
           ),
           GoRoute(
-            path: '/driver/students',
-            builder: (_, __) => const StudentRosterScreen(),
+            path: '/driver/trip',
+            builder: (_, __) => const DriverTripScreen(),
           ),
           GoRoute(
-            path: '/driver/attendance',
-            builder: (_, __) => const BusAttendanceScreen(),
-          ),
-          GoRoute(
-            path: '/driver/profile',
-            builder: (_, __) => const ProfileScreen(),
+            path: '/driver/more',
+            builder: (_, __) => const driver_more.DriverMoreScreen(),
           ),
         ],
       ),
@@ -397,89 +503,40 @@ final routerProvider = Provider<GoRouter>((ref) {
         routes: [
           GoRoute(
             path: '/security/dashboard',
-            builder: (_, __) => const security.DashboardScreen(),
-          ),
-          GoRoute(
-            path: '/security/entry-exit',
-            builder: (_, __) => const EntryExitScreen(),
+            builder: (_, __) => const security.SecurityDashboardScreen(),
           ),
           GoRoute(
             path: '/security/visitors',
-            builder: (_, __) => const VisitorsScreen(),
+            builder: (_, __) => const SecurityVisitorsScreen(),
+            routes: [
+              GoRoute(
+                path: 'new',
+                builder: (_, __) => const RegisterVisitorScreen(),
+              ),
+            ],
           ),
           GoRoute(
-            path: '/security/passes',
+            path: '/security/entry-exit',
+            builder: (_, __) => const security_log.EntryExitLogScreen(),
+            routes: [
+              GoRoute(
+                path: 'new',
+                builder: (_, state) {
+                  final extra = state.extra;
+                  final scanFirst = extra is Map<String, dynamic> &&
+                      extra['scanFirst'] == true;
+                  return LogEntryExitScreen(scanFirst: scanFirst);
+                },
+              ),
+            ],
+          ),
+          GoRoute(
+            path: '/security/gate-passes',
             builder: (_, __) => const GatePassesScreen(),
           ),
           GoRoute(
-            path: '/security/face-verify',
-            builder: (_, __) => const FaceVerifyScreen(),
-          ),
-          GoRoute(
-            path: '/security/profile',
-            builder: (_, __) => const ProfileScreen(),
-          ),
-        ],
-      ),
-
-      // ── Reception shell ──────────────────────────────────────────────────
-      ShellRoute(
-        builder: (context, state, child) => ReceptionShell(child: child),
-        routes: [
-          GoRoute(
-            path: '/reception/dashboard',
-            builder: (_, __) => const reception.DashboardScreen(),
-          ),
-          GoRoute(
-            path: '/reception/visitors',
-            builder: (_, __) => const reception_visitors.ReceptionVisitorsScreen(),
-          ),
-          GoRoute(
-            path: '/reception/calls',
-            builder: (_, __) => const CallLogScreen(),
-          ),
-          GoRoute(
-            path: '/reception/more',
-            builder: (_, __) => const AppointmentsScreen(),
-          ),
-          GoRoute(
-            path: '/reception/appointments',
-            builder: (_, __) => const AppointmentsScreen(),
-          ),
-          GoRoute(
-            path: '/reception/late-arrivals',
-            builder: (_, __) => const LateArrivalsScreen(),
-          ),
-          GoRoute(
-            path: '/reception/profile',
-            builder: (_, __) => const ProfileScreen(),
-          ),
-        ],
-      ),
-
-      // ── Student shell ────────────────────────────────────────────────────
-      ShellRoute(
-        builder: (context, state, child) => StudentShell(child: child),
-        routes: [
-          GoRoute(
-            path: '/student/dashboard',
-            builder: (_, __) => const student.DashboardScreen(),
-          ),
-          GoRoute(
-            path: '/student/fees',
-            builder: (_, __) => const FeeMatrixScreen(),
-          ),
-          GoRoute(
-            path: '/student/receipts',
-            builder: (_, __) => const student_receipts.StudentReceiptsScreen(),
-          ),
-          GoRoute(
-            path: '/student/transport',
-            builder: (_, __) => const TransportScreen(),
-          ),
-          GoRoute(
-            path: '/student/profile',
-            builder: (_, __) => const ProfileScreen(),
+            path: '/security/more',
+            builder: (_, __) => const security_more.SecurityMoreScreen(),
           ),
         ],
       ),
@@ -490,65 +547,39 @@ final routerProvider = Provider<GoRouter>((ref) {
         routes: [
           GoRoute(
             path: '/parent/dashboard',
-            builder: (_, __) => const parent.DashboardScreen(),
+            builder: (_, __) => const parent.ParentDashboardScreen(),
+          ),
+          GoRoute(
+            path: '/parent/fees',
+            builder: (_, __) => const ParentFeesScreen(),
+          ),
+          GoRoute(
+            path: '/parent/attendance',
+            builder: (_, __) => const ParentAttendanceScreen(),
+          ),
+          GoRoute(
+            path: '/parent/transport',
+            builder: (_, __) => const ParentTransportScreen(),
+          ),
+          GoRoute(
+            path: '/parent/more',
+            builder: (_, __) => const parent_more.ParentMoreScreen(),
           ),
           GoRoute(
             path: '/parent/receipts',
-            builder: (_, __) =>
-                const parent_receipts.ParentReceiptsScreen(),
-          ),
-          GoRoute(
-            path: '/parent/children/:id',
-            builder: (_, state) => ChildFeesScreen(
-              childId: state.pathParameters['id']!,
-            ),
-          ),
-          GoRoute(
-            path: '/parent/timetable',
-            builder: (_, __) => const ParentTimetableScreen(),
+            builder: (_, __) => const ParentReceiptsScreen(),
           ),
           GoRoute(
             path: '/parent/calendar',
             builder: (_, __) => const ParentCalendarScreen(),
           ),
           GoRoute(
+            path: '/parent/timetable',
+            builder: (_, __) => const ParentTimetableScreen(),
+          ),
+          GoRoute(
             path: '/parent/profile',
-            builder: (_, __) => const ProfileScreen(),
-          ),
-        ],
-      ),
-
-      // ── Web Admin shell ──────────────────────────────────────────────────
-      ShellRoute(
-        builder: (context, state, child) => WebAdminShell(child: child),
-        routes: [
-          GoRoute(
-            path: '/web-admin/dashboard',
-            builder: (_, __) => const web_admin.WebAdminDashboardScreen(),
-          ),
-          GoRoute(
-            path: '/web-admin/content',
-            builder: (_, __) => const ContentScreen(),
-          ),
-          GoRoute(
-            path: '/web-admin/gallery',
-            builder: (_, __) => const GalleryScreen(),
-          ),
-          GoRoute(
-            path: '/web-admin/more',
-            builder: (_, __) => const WebAdminMoreScreen(),
-          ),
-          GoRoute(
-            path: '/web-admin/pages',
-            builder: (_, __) => const PagesScreen(),
-          ),
-          GoRoute(
-            path: '/web-admin/settings',
-            builder: (_, __) => const WebsiteSettingsScreen(),
-          ),
-          GoRoute(
-            path: '/web-admin/profile',
-            builder: (_, __) => const ProfileScreen(),
+            builder: (_, __) => const parent_profile.ParentProfileScreen(),
           ),
         ],
       ),
@@ -558,28 +589,6 @@ final routerProvider = Provider<GoRouter>((ref) {
   ref.onDispose(notifier.dispose);
   return router;
 });
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-String _homeForRole(String role) {
-  if (AppRole.adminRoles.contains(role)) return '/admin/dashboard';
-  switch (role) {
-    case AppRole.driver:
-      return '/driver/dashboard';
-    case AppRole.securityGuard:
-      return '/security/dashboard';
-    case AppRole.receptionist:
-      return '/reception/dashboard';
-    case AppRole.student:
-      return '/student/dashboard';
-    case AppRole.parent:
-      return '/parent/dashboard';
-    case AppRole.webAdmin:
-      return '/web-admin/dashboard';
-    default:
-      return '/admin/dashboard';
-  }
-}
 
 // ── GoRouter refresh bridge ───────────────────────────────────────────────────
 
@@ -598,4 +607,3 @@ class _RouterNotifier extends ChangeNotifier {
     super.dispose();
   }
 }
-

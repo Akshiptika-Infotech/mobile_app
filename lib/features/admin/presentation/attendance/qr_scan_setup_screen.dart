@@ -5,6 +5,9 @@ import 'package:intl/intl.dart';
 import 'package:mobile_app/features/admin/domain/attendance_model.dart';
 import 'package:mobile_app/features/admin/domain/class_model.dart';
 import 'package:mobile_app/features/admin/providers/class_provider.dart';
+import 'package:mobile_app/features/admin/providers/my_profile_provider.dart';
+import 'package:mobile_app/features/auth/domain/user_model.dart';
+import 'package:mobile_app/features/auth/providers/auth_provider.dart';
 
 class QrScanSetupScreen extends ConsumerStatefulWidget {
   const QrScanSetupScreen({super.key});
@@ -47,7 +50,9 @@ class _QrScanSetupScreenState extends ConsumerState<QrScanSetupScreen> {
       sectionId: _selectedSection?.id,
       sectionName: _selectedSection?.name,
     );
-    context.push('/admin/attendance/qr-scan', extra: params);
+    final loc = GoRouterState.of(context).matchedLocation;
+    final prefix = loc.startsWith('/teacher') ? '/teacher' : '/admin';
+    context.push('$prefix/attendance/qr-scan', extra: params);
   }
 
   @override
@@ -56,6 +61,12 @@ class _QrScanSetupScreenState extends ConsumerState<QrScanSetupScreen> {
     final yearsAsync = ref.watch(academicYearsProvider);
     final classesAsync = ref.watch(classesProvider);
     final sectionsAsync = ref.watch(sectionsProvider);
+    final user = ref.watch(currentUserProvider);
+    final isTeacher = user?.role == AppRole.teacher;
+    final profileAsync =
+        isTeacher ? ref.watch(myProfileProvider) : null;
+    final teacherClassId = profileAsync?.asData?.value.assignedClassId;
+    final teacherSectionId = profileAsync?.asData?.value.assignedSectionId;
 
     return Scaffold(
       appBar: AppBar(title: const Text('QR Attendance Setup')),
@@ -127,16 +138,42 @@ class _QrScanSetupScreenState extends ConsumerState<QrScanSetupScreen> {
             loading: () => const LinearProgressIndicator(),
             error: (e, _) => Text('Error: $e',
                 style: TextStyle(color: cs.error)),
-            data: (classes) => _DropdownCard<SchoolClass>(
-              value: _selectedClass,
-              items: classes,
-              labelBuilder: (c) => c?.name ?? '',
-              hint: 'Select class',
-              onChanged: (c) => setState(() {
-                _selectedClass = c;
-                _selectedSection = null;
-              }),
-            ),
+            data: (classes) {
+              // Teachers are locked to their assigned class — prefill on the
+              // next frame so we don't call setState during build.
+              if (teacherClassId != null &&
+                  teacherClassId.isNotEmpty &&
+                  (_selectedClass == null ||
+                      _selectedClass!.id != teacherClassId)) {
+                final match = classes.firstWhere(
+                  (c) => c.id == teacherClassId,
+                  orElse: () => SchoolClass(
+                      id: teacherClassId,
+                      name: profileAsync?.asData?.value.assignedClassName ?? '',
+                      academicYear: '',
+                      sections: const []),
+                );
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (mounted) {
+                    setState(() {
+                      _selectedClass = match;
+                      _selectedSection = null;
+                    });
+                  }
+                });
+              }
+              return _DropdownCard<SchoolClass>(
+                value: _selectedClass,
+                items: classes,
+                labelBuilder: (c) => c?.name ?? '',
+                hint: 'Select class',
+                enabled: teacherClassId == null || teacherClassId.isEmpty,
+                onChanged: (c) => setState(() {
+                  _selectedClass = c;
+                  _selectedSection = null;
+                }),
+              );
+            },
           ),
           const SizedBox(height: 16),
 
@@ -148,6 +185,25 @@ class _QrScanSetupScreenState extends ConsumerState<QrScanSetupScreen> {
             error: (_, __) => const SizedBox.shrink(),
             data: (allSections) {
               final sections = _sectionsForClass(allSections);
+              // Prefill teacher's assigned section once the class is set and
+              // the sections list is loaded.
+              if (teacherSectionId != null &&
+                  teacherSectionId.isNotEmpty &&
+                  _selectedClass != null &&
+                  (_selectedSection == null ||
+                      _selectedSection!.id != teacherSectionId)) {
+                final match = sections.firstWhere(
+                  (s) => s.id == teacherSectionId,
+                  orElse: () => Section(
+                      id: teacherSectionId,
+                      name:
+                          profileAsync?.asData?.value.assignedSectionName ?? '',
+                      classId: _selectedClass!.id),
+                );
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (mounted) setState(() => _selectedSection = match);
+                });
+              }
               if (sections.isEmpty) {
                 return Container(
                   padding: const EdgeInsets.all(14),
@@ -166,6 +222,7 @@ class _QrScanSetupScreenState extends ConsumerState<QrScanSetupScreen> {
                 items: [null, ...sections.cast<Section?>()],
                 labelBuilder: (s) => s?.name ?? 'All sections',
                 hint: 'All sections',
+                enabled: teacherSectionId == null || teacherSectionId.isEmpty,
                 onChanged: (s) => setState(() => _selectedSection = s),
               );
             },
@@ -245,6 +302,7 @@ class _DropdownCard<T> extends StatelessWidget {
     required this.labelBuilder,
     required this.hint,
     required this.onChanged,
+    this.enabled = true,
   });
 
   final T? value;
@@ -252,6 +310,7 @@ class _DropdownCard<T> extends StatelessWidget {
   final String Function(T? item) labelBuilder;
   final String hint;
   final void Function(T?) onChanged;
+  final bool enabled;
 
   @override
   Widget build(BuildContext context) {
@@ -259,6 +318,7 @@ class _DropdownCard<T> extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
+        color: enabled ? null : cs.surfaceContainerHighest.withValues(alpha: 0.4),
         border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.5)),
         borderRadius: BorderRadius.circular(12),
       ),
@@ -268,7 +328,7 @@ class _DropdownCard<T> extends StatelessWidget {
           hint: Text(hint,
               style: TextStyle(color: cs.onSurfaceVariant, fontSize: 14)),
           isExpanded: true,
-          onChanged: onChanged,
+          onChanged: enabled ? onChanged : null,
           items: items
               .map((item) => DropdownMenuItem<T?>(
                     value: item,

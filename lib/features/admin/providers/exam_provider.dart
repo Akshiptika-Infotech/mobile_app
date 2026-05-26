@@ -60,7 +60,7 @@ class MarkEntryNotifier extends StateNotifier<MarkEntryState> {
     state =
         state.copyWith(selectedSubject: subject, isLoading: true, students: []);
     try {
-      final students = await _repo.fetchStudentMarks(subject.id);
+      final students = await _repo.fetchStudentMarks(subject);
       if (!mounted) return;
       state = state.copyWith(students: students, isLoading: false);
     } catch (e) {
@@ -87,7 +87,7 @@ class MarkEntryNotifier extends StateNotifier<MarkEntryState> {
     state = state.copyWith(isSubmitting: true);
     try {
       final marks = state.students.map((s) => s.toJson()).toList();
-      await _repo.submitMarks(subject.id, marks);
+      await _repo.submitMarks(subject, marks);
       if (!mounted) return;
       state = state.copyWith(isSubmitting: false, success: true);
     } catch (e) {

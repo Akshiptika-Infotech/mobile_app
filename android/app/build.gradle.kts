@@ -19,6 +19,7 @@ val jmukhisicsProps   = loadProps("jmukhisics.properties")
 val sicschoolProps    = loadProps("sicschool.properties")
 val schoolfeeproProps = loadProps("schoolfeepro.properties")
 val theshivalikProps  = loadProps("theshivalik.properties")
+val shivaliksmartkidsProps = loadProps("shivaliksmartkids.properties")
 
 android {
     namespace  = "in.jmukhisics.mobile_app"
@@ -69,6 +70,12 @@ android {
             keyAlias      = theshivalikProps["keyAlias"]                   as String
             keyPassword   = theshivalikProps["keyPassword"]                as String
         }
+        create("shivaliksmartkids") {
+            storeFile     = rootProject.file(shivaliksmartkidsProps["storeFile"] as String)
+            storePassword = shivaliksmartkidsProps["storePassword"]              as String
+            keyAlias      = shivaliksmartkidsProps["keyAlias"]                   as String
+            keyPassword   = shivaliksmartkidsProps["keyPassword"]                as String
+        }
     }
 
     // ── Flavors ────────────────────────────────────────────────────────────────
@@ -78,34 +85,42 @@ android {
         create("jmukhisics") {
             dimension     = "app"
             applicationId = "in.jmukhisics.mobile_app"
-            versionCode   = 5
-            versionName   = "1.0.4"
+            versionCode   = 7
+            versionName   = "1.0.6"
             resValue("string", "app_name", "JMukhisics")
             signingConfig = signingConfigs.getByName("jmukhisics")
         }
         create("sicschool") {
             dimension     = "app"
             applicationId = "in.sicschool.mobile_app"
-            versionCode   = 5
-            versionName   = "1.0.4"
+            versionCode   = 7
+            versionName   = "1.0.6"
             resValue("string", "app_name", "SIC School")
             signingConfig = signingConfigs.getByName("sicschool")
         }
         create("schoolfeepro") {
             dimension     = "app"
             applicationId = "in.schoolfeepro.mobile_app"
-            versionCode   = 6
-            versionName   = "1.0.5"
+            versionCode   = 7
+            versionName   = "1.0.6"
             resValue("string", "app_name", "SchoolFeePro")
             signingConfig = signingConfigs.getByName("schoolfeepro")
         }
         create("theshivalik") {
             dimension     = "app"
             applicationId = "in.theshivalik.mobile_app"
-            versionCode   = 6
-            versionName   = "1.0.5"
+            versionCode   = 7
+            versionName   = "1.0.6"
             resValue("string", "app_name", "The Shivalik")
             signingConfig = signingConfigs.getByName("theshivalik")
+        }
+        create("shivaliksmartkids") {
+            dimension     = "app"
+            applicationId = "in.shivaliksmartkids.mobile_app"
+            versionCode   = 7
+            versionName   = "1.0.6"
+            resValue("string", "app_name", "Shivalik Smart Kids")
+            signingConfig = signingConfigs.getByName("shivaliksmartkids")
         }
     }
 

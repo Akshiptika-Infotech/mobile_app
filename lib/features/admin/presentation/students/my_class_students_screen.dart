@@ -22,6 +22,14 @@ final myClassStudentsProvider =
 
 // ── Screen ────────────────────────────────────────────────────────────────────
 
+/// Returns the route prefix for student detail / new / edit routes, based on
+/// whether the screen is currently mounted under `/teacher/...` or
+/// `/admin/...`. Keeps a single screen reusable by both portals.
+String studentsRoutePrefix(BuildContext context) {
+  final loc = GoRouterState.of(context).matchedLocation;
+  return loc.startsWith('/teacher') ? '/teacher/class' : '/admin/students';
+}
+
 class MyClassStudentsScreen extends ConsumerWidget {
   const MyClassStudentsScreen({super.key});
 
@@ -29,14 +37,14 @@ class MyClassStudentsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
     final studentsAsync = ref.watch(myClassStudentsProvider);
+    final loc = GoRouterState.of(context).matchedLocation;
+    final isTeacher = loc.startsWith('/teacher');
 
     return Scaffold(
       backgroundColor: cs.surfaceContainerLowest,
       appBar: AppBar(
         title: const Text('My Class'),
         centerTitle: false,
-        backgroundColor: cs.surface,
-        surfaceTintColor: cs.surfaceTint,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
@@ -53,6 +61,13 @@ class MyClassStudentsScreen extends ConsumerWidget {
         ),
         data: (students) => _StudentModelList(students: students),
       ),
+      floatingActionButton: isTeacher
+          ? null
+          : FloatingActionButton.extended(
+              onPressed: () => context.push('/admin/students/new'),
+              icon: const Icon(Icons.person_add_alt_1_rounded),
+              label: const Text('Add student'),
+            ),
     );
   }
 }
@@ -135,12 +150,13 @@ class _StudentModelListState extends State<_StudentModelList> {
                   ),
                 )
               : ListView.builder(
-                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 32),
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 88),
                   itemCount: filtered.length,
                   itemBuilder: (context, i) => _StudentModelCard(
                     student: filtered[i],
                     index: i,
-                    onTap: () => context.push('/admin/students/${filtered[i].id}'),
+                    onTap: () => context.push(
+                        '${studentsRoutePrefix(context)}/${filtered[i].id}'),
                   ),
                 ),
         ),

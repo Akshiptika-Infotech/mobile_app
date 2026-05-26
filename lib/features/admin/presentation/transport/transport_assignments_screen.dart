@@ -97,8 +97,6 @@ class _TransportAssignmentsScreenState extends ConsumerState<TransportAssignment
       backgroundColor: cs.surfaceContainerLowest,
       appBar: AppBar(
         title: const Text('Transport Assignments'),
-        backgroundColor: cs.surface,
-        surfaceTintColor: cs.surfaceTint,
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _showAdd,

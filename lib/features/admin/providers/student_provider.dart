@@ -186,6 +186,16 @@ class StudentFormNotifier extends StateNotifier<StudentFormState> {
     }
   }
 
+  Future<void> updatePhoto(String id, String filePath) async {
+    state = state.copyWith(isSubmitting: true);
+    try {
+      await _repo.updateStudentPhoto(id, filePath);
+      state = state.copyWith(isSubmitting: false, success: true);
+    } catch (e) {
+      state = state.copyWith(isSubmitting: false, error: e.toString());
+    }
+  }
+
   void reset() {
     state = const StudentFormState();
   }

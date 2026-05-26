@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -40,8 +41,6 @@ class MarkEntryScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Mark Entry'),
         centerTitle: false,
-        backgroundColor: cs.surface,
-        surfaceTintColor: cs.surfaceTint,
       ),
       body: Column(
         children: [
@@ -298,15 +297,22 @@ class _StudentMarkRowState extends State<_StudentMarkRow> {
           CircleAvatar(
             radius: 18,
             backgroundColor: cs.primaryContainer,
-            child: Text(
-              widget.student.studentName.isNotEmpty
-                  ? widget.student.studentName[0].toUpperCase()
-                  : '?',
-              style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: cs.onPrimaryContainer,
-                  fontSize: 13),
-            ),
+            backgroundImage: (widget.student.photoUrl != null &&
+                    widget.student.photoUrl!.isNotEmpty)
+                ? CachedNetworkImageProvider(widget.student.photoUrl!)
+                : null,
+            child: (widget.student.photoUrl == null ||
+                    widget.student.photoUrl!.isEmpty)
+                ? Text(
+                    widget.student.studentName.isNotEmpty
+                        ? widget.student.studentName[0].toUpperCase()
+                        : '?',
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: cs.onPrimaryContainer,
+                        fontSize: 13),
+                  )
+                : null,
           ),
           const SizedBox(width: 12),
           Expanded(

@@ -75,4 +75,24 @@ class StudentRepository {
     }
     throw Exception('Unexpected update student response format');
   }
+
+  /// Uploads a profile photo file and PATCHes the student's photoPath.
+  /// Returns the updated student.
+  Future<StudentModel> updateStudentPhoto(String id, String filePath) async {
+    final form = FormData.fromMap({
+      'file': await MultipartFile.fromFile(filePath),
+      'folder': 'photos',
+      'resourceType': 'image',
+    });
+    final uploadRes = await _dio.post('/api/admin/upload', data: form);
+    final uploadData = uploadRes.data;
+    if (uploadData is! Map<String, dynamic>) {
+      throw Exception('Unexpected upload response format');
+    }
+    final url = (uploadData['url'] ?? uploadData['path'] ?? '').toString();
+    if (url.isEmpty) {
+      throw Exception('Upload returned an empty URL');
+    }
+    return updateStudent(id, {'photoPath': url});
+  }
 }
