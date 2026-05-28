@@ -107,15 +107,20 @@ class CalendarNotifier extends StateNotifier<CalendarState> {
     required String title,
     required String description,
     required String type,
-    required DateTime date,
-    String? targetClass,
+    required DateTime startDate,
+    required DateTime endDate,
+    String? classId,
+    String? sectionId,
   }) async {
+    final fmt = DateFormat('yyyy-MM-dd');
     await _repo.createEvent(
       title: title,
       description: description,
       eventType: type,
-      date: DateFormat('yyyy-MM-dd').format(date),
-      targetClass: targetClass,
+      startDate: fmt.format(startDate),
+      endDate: fmt.format(endDate),
+      classId: classId,
+      sectionId: sectionId,
     );
     await _load();
   }

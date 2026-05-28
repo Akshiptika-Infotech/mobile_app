@@ -180,6 +180,18 @@ class AuthNotifier extends StateNotifier<AuthState> {
       current.user.copyWith(image: imageUrl, clearImage: imageUrl == null),
     );
   }
+
+  /// Clears the `mustChangePassword` flag in-memory after the user has
+  /// successfully rotated their password. The backend has already set the
+  /// DB column to `false` — this just lets the router redirect logic move
+  /// the user into their portal without a full session refetch.
+  void clearMustChangePassword() {
+    final current = state;
+    if (current is! AuthAuthenticated) return;
+    state = AuthAuthenticated(
+      current.user.copyWith(mustChangePassword: false),
+    );
+  }
 }
 
 // ── Providers ─────────────────────────────────────────────────────────────────

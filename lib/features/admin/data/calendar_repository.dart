@@ -28,20 +28,35 @@ class CalendarRepository {
         .toList();
   }
 
+  /// Creates a calendar event. Scope rules (match backend
+  /// `/api/admin/calendar` POST):
+  ///   - `classId == null` → school-wide event.
+  ///   - `classId` set, `sectionId == null` → class-wide.
+  ///   - `classId` set, `sectionId` set → section-specific.
+  /// The backend ignores `sectionId` when `classId` is null.
   Future<void> createEvent({
     required String title,
     required String description,
     required String eventType,
-    required String date,
-    String? targetClass,
+    required String startDate,
+    required String endDate,
+    String? classId,
+    String? sectionId,
+    String? color,
   }) async {
     await _dio.post('/api/admin/calendar', data: {
       'title': title,
       if (description.isNotEmpty) 'description': description,
       'eventType': eventType.toUpperCase(),
-      'startDate': '${date}T00:00:00.000Z',
-      'endDate': '${date}T23:59:59.000Z',
-      if (targetClass != null && targetClass.isNotEmpty) 'classId': targetClass,
+      'startDate': '${startDate}T00:00:00.000Z',
+      'endDate': '${endDate}T23:59:59.000Z',
+      if (classId != null && classId.isNotEmpty) 'classId': classId,
+      if (classId != null &&
+          classId.isNotEmpty &&
+          sectionId != null &&
+          sectionId.isNotEmpty)
+        'sectionId': sectionId,
+      if (color != null && color.isNotEmpty) 'color': color,
     });
   }
 

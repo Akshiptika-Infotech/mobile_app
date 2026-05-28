@@ -7,6 +7,7 @@ class UserModel {
     this.employeeId,
     this.image,
     this.expires,
+    this.mustChangePassword = false,
   });
 
   final String id;
@@ -19,8 +20,13 @@ class UserModel {
   /// ISO-8601 expiry timestamp from NextAuth session.
   final DateTime? expires;
 
+  /// Set by the backend when the user was just provisioned (or an admin
+  /// reset the password). Router uses this to force the change-password
+  /// screen before letting them reach their portal.
+  final bool mustChangePassword;
+
   factory UserModel.fromJson(Map<String, dynamic> json) {
-    // NextAuth session shape: { user: { id, name, email, role, employeeId, image }, expires }
+    // NextAuth session shape: { user: { id, name, email, role, employeeId, image, mustChangePassword }, expires }
     final user =
         json.containsKey('user') ? json['user'] as Map<String, dynamic> : json;
 
@@ -34,6 +40,7 @@ class UserModel {
       employeeId: user['employeeId']?.toString(),
       image: (rawImage == null || rawImage.isEmpty) ? null : rawImage,
       expires: expiresRaw != null ? DateTime.tryParse(expiresRaw) : null,
+      mustChangePassword: user['mustChangePassword'] == true,
     );
   }
 
@@ -45,6 +52,7 @@ class UserModel {
         if (employeeId != null) 'employeeId': employeeId,
         if (image != null) 'image': image,
         if (expires != null) 'expires': expires!.toIso8601String(),
+        if (mustChangePassword) 'mustChangePassword': true,
       };
 
   UserModel copyWith({
@@ -55,6 +63,7 @@ class UserModel {
     String? employeeId,
     String? image,
     DateTime? expires,
+    bool? mustChangePassword,
     bool clearImage = false,
     bool clearExpires = false,
   }) {
@@ -66,6 +75,7 @@ class UserModel {
       employeeId: employeeId ?? this.employeeId,
       image: clearImage ? null : (image ?? this.image),
       expires: clearExpires ? null : (expires ?? this.expires),
+      mustChangePassword: mustChangePassword ?? this.mustChangePassword,
     );
   }
 

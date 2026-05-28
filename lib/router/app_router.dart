@@ -53,6 +53,7 @@ import 'package:mobile_app/features/admin/presentation/more_screen.dart';
 import 'package:mobile_app/features/admin/presentation/users/users_screen.dart';
 import 'package:mobile_app/features/admin/domain/attendance_model.dart';
 import 'package:mobile_app/features/auth/domain/user_model.dart';
+import 'package:mobile_app/features/auth/presentation/change_password_screen.dart';
 import 'package:mobile_app/features/auth/presentation/login_screen.dart';
 import 'package:mobile_app/features/auth/providers/auth_provider.dart';
 import 'package:mobile_app/features/profile/presentation/profile_screen.dart';
@@ -114,6 +115,19 @@ final routerProvider = Provider<GoRouter>((ref) {
         return isLoggingIn ? null : '/login';
       }
       if (authState is AuthAuthenticated) {
+        // Force first-login password rotation. The user can't reach any
+        // portal route until the backend's `mustChangePassword` flag has
+        // been cleared.
+        final mustChange = authState.user.mustChangePassword;
+        final onChangePw = state.matchedLocation == '/change-password';
+        if (mustChange && !onChangePw) {
+          return '/change-password';
+        }
+        if (!mustChange && onChangePw) {
+          // Flag has been cleared — bounce them out to their portal.
+          return '/login';
+        }
+
         final role = authState.user.role;
         final isAdmin = AppRole.adminRoles.contains(role);
         final isTeacher = role == AppRole.teacher;
@@ -166,6 +180,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/login',
         builder: (_, __) => const LoginScreen(),
+      ),
+      GoRoute(
+        path: '/change-password',
+        builder: (_, __) => const ChangePasswordScreen(),
       ),
 
       // ── Admin shell ──────────────────────────────────────────────────────
