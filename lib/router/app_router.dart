@@ -63,6 +63,7 @@ import 'package:mobile_app/features/teacher/presentation/exams_hub_screen.dart';
 import 'package:mobile_app/features/teacher/presentation/leave_request_screen.dart';
 import 'package:mobile_app/features/teacher/presentation/more_screen.dart'
     as teacher_more;
+import 'package:mobile_app/features/teacher/presentation/teacher_subjects_screen.dart';
 import 'package:mobile_app/features/teacher/presentation/teacher_shell.dart';
 import 'package:mobile_app/features/driver/presentation/dashboard_screen.dart'
     as driver;
@@ -462,6 +463,10 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: 'report-cards',
                 builder: (_, __) => const ReportCardsScreen(),
+              ),
+              GoRoute(
+                path: 'subjects',
+                builder: (_, __) => const TeacherSubjectsScreen(),
               ),
             ],
           ),

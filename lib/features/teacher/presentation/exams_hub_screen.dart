@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile_app/app_config.dart';
+import 'package:mobile_app/features/admin/providers/my_profile_provider.dart';
 
-class TeacherExamsHubScreen extends StatelessWidget {
+class TeacherExamsHubScreen extends ConsumerWidget {
   const TeacherExamsHubScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
     final primary = AppConfigScope.of(context).primaryColor;
+    final profileAsync = ref.watch(myProfileProvider);
+    final isMotherTeacher = profileAsync.value?.isMotherTeacher ?? false;
 
     return Scaffold(
       backgroundColor: cs.surfaceContainerLowest,
@@ -55,6 +59,17 @@ class TeacherExamsHubScreen extends StatelessWidget {
               accent: primary,
               onTap: () => context.go('/teacher/exams/report-cards'),
             ),
+            if (isMotherTeacher) ...[
+              const SizedBox(height: 14),
+              _BigActionCard(
+                icon: Icons.menu_book_rounded,
+                title: 'Manage Subjects',
+                subtitle: 'Add, edit and remove exam subjects for your class.',
+                color: const Color(0xFF10B981),
+                accent: primary,
+                onTap: () => context.go('/teacher/exams/subjects'),
+              ),
+            ],
           ],
         ),
       ),

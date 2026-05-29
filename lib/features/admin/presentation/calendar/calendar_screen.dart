@@ -7,6 +7,10 @@ import 'package:mobile_app/features/admin/domain/calendar_model.dart';
 import 'package:mobile_app/features/admin/domain/class_model.dart';
 import 'package:mobile_app/features/admin/providers/calendar_provider.dart';
 import 'package:mobile_app/features/admin/providers/class_provider.dart';
+import 'package:mobile_app/features/admin/domain/my_profile_model.dart';
+import 'package:mobile_app/features/admin/providers/my_profile_provider.dart';
+import 'package:mobile_app/features/auth/domain/user_model.dart';
+import 'package:mobile_app/features/auth/providers/auth_provider.dart';
 
 class CalendarScreen extends ConsumerWidget {
   const CalendarScreen({super.key});
@@ -14,8 +18,18 @@ class CalendarScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
-    final state = ref.watch(calendarProvider);
+    final rawState = ref.watch(calendarProvider);
     final notifier = ref.read(calendarProvider.notifier);
+
+    final user = ref.watch(currentUserProvider);
+    final profileAsync = ref.watch(myProfileProvider);
+    final isTeacher = user?.role == AppRole.teacher;
+
+    // For teachers, scope events to their assigned class / section
+    // (plus school-wide events with no class scope).
+    final state = isTeacher
+        ? _filterForTeacher(rawState, profileAsync.valueOrNull)
+        : rawState;
 
     return Scaffold(
       backgroundColor: cs.surfaceContainerLowest,
@@ -47,6 +61,31 @@ class CalendarScreen extends ConsumerWidget {
     );
   }
 
+  static CalendarState _filterForTeacher(
+    CalendarState raw,
+    MyProfile? profile,
+  ) {
+    final teacherClassId = profile?.assignedClassId;
+    final teacherSectionId = profile?.assignedSectionId;
+    final filtered = raw.events.where((e) {
+      // School-wide events (no class scope) are always visible.
+      if (e.classId == null || e.classId!.isEmpty) return true;
+      // If the teacher has no assigned class, hide scoped events.
+      if (teacherClassId == null || teacherClassId.isEmpty) return false;
+      // Must match the teacher's class.
+      if (e.classId != teacherClassId) return false;
+      // If the event targets a specific section, the teacher must be
+      // assigned to that exact section.
+      if (e.sectionId != null && e.sectionId!.isNotEmpty) {
+        return teacherSectionId != null && teacherSectionId.isNotEmpty
+            && e.sectionId == teacherSectionId;
+      }
+      // Class-wide event (no section restriction) → visible.
+      return true;
+    }).toList();
+    return raw.copyWith(events: filtered);
+  }
+
   void _showCreateSheet(BuildContext context, WidgetRef ref) {
     showModalBottomSheet<void>(
       context: context,
@@ -56,8 +95,21 @@ class CalendarScreen extends ConsumerWidget {
   }
 }
 
+/// Re-opens the same sheet pre-filled for editing. Used from event tiles.
+void _showEditSheet(BuildContext context, CalendarEvent event) {
+  showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    builder: (_) => _CreateEventSheet(existing: event),
+  );
+}
+
 class _CreateEventSheet extends ConsumerStatefulWidget {
-  const _CreateEventSheet();
+  const _CreateEventSheet({this.existing});
+
+  /// When non-null the sheet enters edit mode: fields are pre-filled and
+  /// submit hits PATCH instead of POST.
+  final CalendarEvent? existing;
 
   @override
   ConsumerState<_CreateEventSheet> createState() => _CreateEventSheetState();
@@ -80,6 +132,26 @@ class _CreateEventSheetState extends ConsumerState<_CreateEventSheet> {
   Section? _selectedSection;
 
   bool _saving = false;
+
+  bool get _isEditing => widget.existing != null;
+
+  @override
+  void initState() {
+    super.initState();
+    final e = widget.existing;
+    if (e == null) return;
+    _titleCtrl.text = e.title;
+    _descriptionCtrl.text = e.description;
+    _type = e.type.toUpperCase();
+    final start = DateTime.tryParse(e.date);
+    final end = DateTime.tryParse(e.endDate ?? '') ?? start;
+    if (start != null) {
+      _startDate = DateTime(start.year, start.month, start.day);
+    }
+    if (end != null) _endDate = DateTime(end.year, end.month, end.day);
+    // Class + section selections need the lookup lists to be loaded; we
+    // hydrate them in the first build via the dropdown's data branch.
+  }
 
   /// Server's `EventType` enum — kept uppercase to match the backend.
   static const _types = <String, String>{
@@ -121,18 +193,34 @@ class _CreateEventSheetState extends ConsumerState<_CreateEventSheet> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _saving = true);
     try {
-      await ref.read(calendarProvider.notifier).createEvent(
-            title: _titleCtrl.text.trim(),
-            description: _descriptionCtrl.text.trim(),
-            type: _type,
-            startDate: _startDate,
-            endDate: _endDate,
-            classId: _selectedClass?.id,
-            // sectionId only matters when classId is set — the backend
-            // ignores it otherwise.
-            sectionId:
-                _selectedClass == null ? null : _selectedSection?.id,
-          );
+      final notifier = ref.read(calendarProvider.notifier);
+      final classId = _selectedClass?.id;
+      // sectionId only matters when classId is set — the backend
+      // ignores it otherwise.
+      final sectionId =
+          _selectedClass == null ? null : _selectedSection?.id;
+      if (_isEditing) {
+        await notifier.updateEvent(
+          id: widget.existing!.id,
+          title: _titleCtrl.text.trim(),
+          description: _descriptionCtrl.text.trim(),
+          type: _type,
+          startDate: _startDate,
+          endDate: _endDate,
+          classId: classId,
+          sectionId: sectionId,
+        );
+      } else {
+        await notifier.createEvent(
+          title: _titleCtrl.text.trim(),
+          description: _descriptionCtrl.text.trim(),
+          type: _type,
+          startDate: _startDate,
+          endDate: _endDate,
+          classId: classId,
+          sectionId: sectionId,
+        );
+      }
       if (!mounted) return;
       Navigator.pop(context);
     } catch (e) {
@@ -164,7 +252,7 @@ class _CreateEventSheetState extends ConsumerState<_CreateEventSheet> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Create Event',
+              Text(_isEditing ? 'Edit Event' : 'Create Event',
                   style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: 16),
               TextFormField(
@@ -222,78 +310,205 @@ class _CreateEventSheetState extends ConsumerState<_CreateEventSheet> {
               ),
               const SizedBox(height: 12),
 
-              // ── Class dropdown ─────────────────────────────────────
-              classesAsync.when(
-                loading: () => const LinearProgressIndicator(),
-                error: (e, _) => Text('Failed to load classes: $e',
-                    style: TextStyle(
-                        color: Theme.of(context).colorScheme.error)),
-                data: (classes) => DropdownButtonFormField<SchoolClass?>(
-                  initialValue: _selectedClass,
-                  decoration: const InputDecoration(
-                    labelText: 'Class (optional)',
-                    helperText: 'Leave empty for a school-wide event',
-                    border: OutlineInputBorder(),
-                  ),
-                  items: [
-                    const DropdownMenuItem<SchoolClass?>(
-                      value: null,
-                      child: Text('Whole school'),
-                    ),
-                    ...classes.map(
-                      (c) => DropdownMenuItem<SchoolClass?>(
-                        value: c,
-                        child: Text(c.name),
-                      ),
-                    ),
-                  ],
-                  onChanged: (c) => setState(() {
-                    _selectedClass = c;
-                    // Reset section when class changes.
-                    _selectedSection = null;
-                  }),
-                ),
-              ),
+              // ── Class / Section scope ──────────────────────────────
+              Builder(
+                builder: (context) {
+                  final user = ref.watch(currentUserProvider);
+                  final profileAsync = ref.watch(myProfileProvider);
+                  final isTeacher = user?.role == AppRole.teacher;
+                  final teacherClassId = profileAsync.value?.assignedClassId;
+                  final teacherSectionId =
+                      profileAsync.value?.assignedSectionId;
 
-              // ── Section dropdown (only when a class is picked) ────
-              if (_selectedClass != null) ...[
-                const SizedBox(height: 12),
-                sectionsAsync.when(
-                  loading: () => const LinearProgressIndicator(),
-                  error: (e, _) => Text('Failed to load sections: $e',
-                      style: TextStyle(
-                          color: Theme.of(context).colorScheme.error)),
-                  data: (allSections) {
-                    final sections = allSections
-                        .where((s) => s.classId == _selectedClass!.id)
-                        .toList();
-                    return DropdownButtonFormField<Section?>(
-                      initialValue: _selectedSection,
-                      decoration: InputDecoration(
-                        labelText: 'Section (optional)',
-                        helperText: sections.isEmpty
-                            ? 'No sections configured for this class'
-                            : 'Leave empty for all sections of this class',
-                        border: const OutlineInputBorder(),
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      classesAsync.when(
+                        loading: () => const LinearProgressIndicator(),
+                        error: (e, _) => Text('Failed to load classes: $e',
+                            style: TextStyle(
+                                color: Theme.of(context).colorScheme.error)),
+                        data: (classes) {
+                          // Hydrate from the event being edited.
+                          final existing = widget.existing;
+                          if (_isEditing &&
+                              _selectedClass == null &&
+                              (existing?.classId ?? '').isNotEmpty) {
+                            final match = classes
+                                .where((c) => c.id == existing!.classId)
+                                .firstOrNull;
+                            if (match != null) {
+                              WidgetsBinding.instance.addPostFrameCallback((_) {
+                                if (mounted && _selectedClass == null) {
+                                  setState(() => _selectedClass = match);
+                                }
+                              });
+                            }
+                          }
+                          // Hydrate teacher's assigned class on create.
+                          if (isTeacher &&
+                              !_isEditing &&
+                              _selectedClass == null &&
+                              teacherClassId != null &&
+                              teacherClassId.isNotEmpty) {
+                            final match = classes
+                                .where((c) => c.id == teacherClassId)
+                                .firstOrNull;
+                            if (match != null) {
+                              WidgetsBinding.instance.addPostFrameCallback((_) {
+                                if (mounted && _selectedClass == null) {
+                                  setState(() => _selectedClass = match);
+                                }
+                              });
+                            }
+                          }
+
+                          final items = isTeacher
+                              ? classes
+                                  .where((c) => c.id == teacherClassId)
+                                  .map(
+                                    (c) => DropdownMenuItem<SchoolClass?>(
+                                      value: c,
+                                      child: Text(c.name),
+                                    ),
+                                  )
+                                  .toList()
+                              : [
+                                  const DropdownMenuItem<SchoolClass?>(
+                                    value: null,
+                                    child: Text('Whole school'),
+                                  ),
+                                  ...classes.map(
+                                    (c) => DropdownMenuItem<SchoolClass?>(
+                                      value: c,
+                                      child: Text(c.name),
+                                    ),
+                                  ),
+                                ];
+
+                          return DropdownButtonFormField<SchoolClass?>(
+                            initialValue: _selectedClass,
+                            decoration: InputDecoration(
+                              labelText: 'Class',
+                              helperText: isTeacher
+                                  ? 'Locked to your assigned class'
+                                  : 'Leave empty for a school-wide event',
+                              border: const OutlineInputBorder(),
+                            ),
+                            items: items,
+                            onChanged: isTeacher
+                                ? null
+                                : (c) => setState(() {
+                                      _selectedClass = c;
+                                      _selectedSection = null;
+                                    }),
+                          );
+                        },
                       ),
-                      items: [
-                        const DropdownMenuItem<Section?>(
-                          value: null,
-                          child: Text('All sections'),
-                        ),
-                        ...sections.map(
-                          (s) => DropdownMenuItem<Section?>(
-                            value: s,
-                            child: Text(s.name),
-                          ),
+                      if (_selectedClass != null) ...[
+                        const SizedBox(height: 12),
+                        sectionsAsync.when(
+                          loading: () => const LinearProgressIndicator(),
+                          error: (e, _) => Text('Failed to load sections: $e',
+                              style: TextStyle(
+                                  color: Theme.of(context).colorScheme.error)),
+                          data: (allSections) {
+                            final sections = allSections
+                                .where((s) =>
+                                    s.classId == _selectedClass!.id)
+                                .toList();
+                            // Hydrate from existing event.
+                            final existing = widget.existing;
+                            if (_isEditing &&
+                                _selectedSection == null &&
+                                (existing?.sectionId ?? '').isNotEmpty &&
+                                existing!.classId ==
+                                    _selectedClass!.id) {
+                              final match = sections
+                                  .where((s) =>
+                                      s.id == existing.sectionId)
+                                  .firstOrNull;
+                              if (match != null) {
+                                WidgetsBinding.instance
+                                    .addPostFrameCallback((_) {
+                                  if (mounted &&
+                                      _selectedSection == null) {
+                                    setState(() =>
+                                        _selectedSection = match);
+                                  }
+                                });
+                              }
+                            }
+                            // Hydrate teacher's assigned section on create.
+                            if (isTeacher &&
+                                !_isEditing &&
+                                _selectedSection == null &&
+                                teacherSectionId != null &&
+                                teacherSectionId.isNotEmpty) {
+                              final match = sections
+                                  .where((s) =>
+                                      s.id == teacherSectionId)
+                                  .firstOrNull;
+                              if (match != null) {
+                                WidgetsBinding.instance
+                                    .addPostFrameCallback((_) {
+                                  if (mounted &&
+                                      _selectedSection == null) {
+                                    setState(() =>
+                                        _selectedSection = match);
+                                  }
+                                });
+                              }
+                            }
+
+                            final items = isTeacher
+                                ? sections
+                                    .where((s) =>
+                                        s.id == teacherSectionId)
+                                    .map(
+                                      (s) => DropdownMenuItem<Section?>(
+                                        value: s,
+                                        child: Text(s.name),
+                                      ),
+                                    )
+                                    .toList()
+                                : [
+                                    const DropdownMenuItem<Section?>(
+                                      value: null,
+                                      child: Text('All sections'),
+                                    ),
+                                    ...sections.map(
+                                      (s) => DropdownMenuItem<Section?>(
+                                        value: s,
+                                        child: Text(s.name),
+                                      ),
+                                    ),
+                                  ];
+
+                            return DropdownButtonFormField<Section?>(
+                              initialValue: _selectedSection,
+                              decoration: InputDecoration(
+                                labelText: 'Section',
+                                helperText: isTeacher
+                                    ? 'Locked to your assigned section'
+                                    : sections.isEmpty
+                                        ? 'No sections configured for this class'
+                                        : 'Leave empty for all sections',
+                                border: const OutlineInputBorder(),
+                              ),
+                              items: items,
+                              onChanged: isTeacher
+                                  ? null
+                                  : (s) => setState(
+                                      () => _selectedSection = s),
+                            );
+                          },
                         ),
                       ],
-                      onChanged: (s) =>
-                          setState(() => _selectedSection = s),
-                    );
-                  },
-                ),
-              ],
+                    ],
+                  );
+                },
+              ),
 
               const SizedBox(height: 20),
               SizedBox(
@@ -306,7 +521,7 @@ class _CreateEventSheetState extends ConsumerState<_CreateEventSheet> {
                           height: 20,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Text('Create'),
+                      : Text(_isEditing ? 'Update' : 'Create'),
                 ),
               ),
             ],
@@ -598,6 +813,7 @@ class _EventTile extends ConsumerWidget {
     final cs = Theme.of(context).colorScheme;
     final color = event.typeColor;
     return GestureDetector(
+      onTap: () => _showEditSheet(context, event),
       onLongPress: () => _confirmDelete(context, ref),
       child: Container(
         margin: const EdgeInsets.only(bottom: 10),

@@ -41,7 +41,7 @@ class TeacherDashboardScreen extends ConsumerWidget {
         color: primary,
         onRefresh: () async {
           ref.invalidate(myClassAttendanceProvider);
-          ref.invalidate(timetableProvider);
+          ref.invalidate(teacherTimetableProvider);
           await Future.delayed(const Duration(milliseconds: 400));
         },
         child: CustomScrollView(
@@ -429,7 +429,7 @@ class _QuickActionGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final items = const [
+    const items = [
       _QuickAction(
         icon: Icons.qr_code_scanner_rounded,
         label: 'QR Attendance',
@@ -539,7 +539,7 @@ class _TodayScheduleCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final async = ref.watch(timetableProvider);
+    final async = ref.watch(teacherTimetableProvider);
     final cs = Theme.of(context).colorScheme;
     final primary = AppConfigScope.of(context).primaryColor;
 
@@ -569,7 +569,7 @@ class _TodayScheduleCard extends ConsumerWidget {
                 ),
               ),
               TextButton(
-                onPressed: () => ref.invalidate(timetableProvider),
+                onPressed: () => ref.invalidate(teacherTimetableProvider),
                 child: const Text('Retry'),
               ),
             ],

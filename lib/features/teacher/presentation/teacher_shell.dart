@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile_app/app_config.dart';
+import 'package:mobile_app/features/admin/providers/my_profile_provider.dart';
 
-class TeacherShell extends StatelessWidget {
+class TeacherShell extends ConsumerWidget {
   const TeacherShell({super.key, required this.child});
 
   final Widget child;
@@ -56,10 +58,15 @@ class TeacherShell extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final location = GoRouterState.of(context).matchedLocation;
     final selectedIndex = _selectedIndex(location);
     final brand = AppConfigScope.of(context).primaryColor;
+
+    // Keep the teacher profile cached for the whole session so that
+    // isMotherTeacher, assignedClassId and assignedSectionId are available
+    // everywhere without re-fetching.
+    ref.watch(myProfileProvider);
 
     return Scaffold(
       restorationId: 'teacher_shell',

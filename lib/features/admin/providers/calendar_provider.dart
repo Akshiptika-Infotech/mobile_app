@@ -125,6 +125,30 @@ class CalendarNotifier extends StateNotifier<CalendarState> {
     await _load();
   }
 
+  Future<void> updateEvent({
+    required String id,
+    required String title,
+    required String description,
+    required String type,
+    required DateTime startDate,
+    required DateTime endDate,
+    String? classId,
+    String? sectionId,
+  }) async {
+    final fmt = DateFormat('yyyy-MM-dd');
+    await _repo.updateEvent(
+      id: id,
+      title: title,
+      description: description,
+      eventType: type,
+      startDate: fmt.format(startDate),
+      endDate: fmt.format(endDate),
+      classId: classId,
+      sectionId: sectionId,
+    );
+    await _load();
+  }
+
   Future<void> deleteEvent(String id) async {
     await _repo.deleteEvent(id);
     await _load();

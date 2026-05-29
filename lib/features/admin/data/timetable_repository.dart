@@ -35,4 +35,77 @@ class TimetableRepository {
   Future<void> deletePeriod(String id) async {
     await _dio.delete('/api/admin/timetable/$id');
   }
+
+  // ── Teacher self-service timetable ─────────────────────────────────────────
+
+  /// Fetches the catalogue of subjects that can be placed on the timetable
+  /// for a given class. These are distinct from exam subjects.
+  Future<List<TimetableSubject>> fetchTimetableSubjects(String classId) async {
+    final response = await _dio.get(
+      '/api/admin/subjects',
+      queryParameters: {'classId': classId},
+    );
+    return extractList(response.data, keys: const ['subjects', 'data', 'items'])
+        .map((e) => TimetableSubject.fromJson(e))
+        .toList();
+  }
+
+  Future<void> createTeacherPeriod({
+    required String dayOfWeek,
+    required int periodNumber,
+    required String startTime,
+    required String endTime,
+    required String subjectId,
+    String? sectionId,
+    bool optionSlot = false,
+  }) async {
+    await _dio.post('/api/teacher/timetable', data: {
+      'dayOfWeek': dayOfWeek,
+      'periodNumber': periodNumber,
+      'startTime': startTime,
+      'endTime': endTime,
+      'subjectId': subjectId,
+      if (sectionId != null) 'sectionId': sectionId,
+      if (optionSlot) 'optionSlot': true,
+    });
+  }
+
+  Future<void> updateTeacherPeriod(
+    String id, {
+    String? startTime,
+    String? endTime,
+    String? subjectId,
+  }) async {
+    await _dio.put('/api/teacher/timetable/$id', data: {
+      if (startTime != null) 'startTime': startTime,
+      if (endTime != null) 'endTime': endTime,
+      if (subjectId != null) 'subjectId': subjectId,
+    });
+  }
+
+  Future<void> deleteTeacherPeriod(String id) async {
+    await _dio.delete('/api/teacher/timetable/$id');
+  }
+}
+
+/// A subject from the timetable catalogue (`/api/admin/subjects`).
+/// Distinct from [TeacherExamSubject].
+class TimetableSubject {
+  const TimetableSubject({
+    required this.id,
+    required this.name,
+    this.code,
+  });
+
+  final String id;
+  final String name;
+  final String? code;
+
+  factory TimetableSubject.fromJson(Map<String, dynamic> json) {
+    return TimetableSubject(
+      id: (json['id'] ?? '').toString(),
+      name: (json['name'] ?? '').toString(),
+      code: json['code']?.toString(),
+    );
+  }
 }

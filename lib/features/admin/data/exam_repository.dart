@@ -7,6 +7,16 @@ final examRepositoryProvider = Provider<ExamRepository>((ref) {
   return ExamRepository(ref.watch(dioClientProvider));
 });
 
+/// Thrown when the backend rejects a marks save because the entry window has
+/// closed (HTTP 403). Callers should flip the screen to its read-only state
+/// rather than treat it as a generic failure.
+class MarksLockedException implements Exception {
+  MarksLockedException(this.message);
+  final String message;
+  @override
+  String toString() => message;
+}
+
 class ExamRepository {
   ExamRepository(this._dio);
 
@@ -22,46 +32,101 @@ class ExamRepository {
   }
 
   Future<List<StudentMark>> fetchStudentMarks(ExamSubject subject) async {
-    final response = await _dio.get(
-      '/api/admin/exams/marks',
-      queryParameters: {
-        'examTypeId': subject.examTypeId,
-        'subjectId': subject.subjectId,
-        'classId': subject.classId,
-        if (subject.sectionId != null) 'sectionId': subject.sectionId,
-      },
-    );
-    return _parseMarksResponse(response.data, subject.subjectId);
+    // The backend `/api/admin/exams/marks` returns 400 on any missing
+    // required id — fail fast with a clear message instead of letting
+    // the user see a generic DioException.
+    final missing = <String>[];
+    if (subject.examTypeId.isEmpty) missing.add('examTypeId');
+    if (subject.subjectId.isEmpty) missing.add('subjectId');
+    if (subject.classId.isEmpty) missing.add('classId');
+    if (missing.isNotEmpty) {
+      throw Exception(
+        'This subject is missing ${missing.join(", ")} from '
+        '/api/teacher/exams. Ask the backend to include the field(s).',
+      );
+    }
+
+    try {
+      final response = await _dio.get(
+        '/api/admin/exams/marks',
+        queryParameters: {
+          'examTypeId': subject.examTypeId,
+          'subjectId': subject.subjectId,
+          'classId': subject.classId,
+          // sectionId is now always the teacher's section; pass it through
+          // unconditionally so the backend scopes the roster correctly.
+          if (subject.sectionId != null && subject.sectionId!.isNotEmpty)
+            'sectionId': subject.sectionId,
+        },
+      );
+      return _parseMarksResponse(response.data, subject.subjectId);
+    } on DioException catch (e) {
+      // Show the server's actual error string instead of the generic
+      // status-code wall of text.
+      final body = e.response?.data;
+      String? msg;
+      if (body is Map && body['error'] is String) {
+        msg = body['error'] as String;
+      } else if (body is String && body.isNotEmpty) {
+        msg = body;
+      }
+      throw Exception(msg ?? 'Failed to load students (HTTP ${e.response?.statusCode}).');
+    }
   }
 
   Future<void> submitMarks(
     ExamSubject subject,
-    List<Map<String, dynamic>> marks,
-  ) async {
+    List<Map<String, dynamic>> marks, {
+    String status = 'SUBMITTED',
+  }) async {
     final rows = marks
-        .where((m) => m['marksObtained'] != null)
+        .where((m) => m['marksObtained'] != null || m['grade'] != null)
         .map((m) => {
               'studentId': m['studentId'],
               'subjectId': subject.subjectId,
-              'marksObtained': m['marksObtained'],
-              'status': 'SUBMITTED',
+              if (m['marksObtained'] != null)
+                'marksObtained': m['marksObtained'],
+              if (m['grade'] != null) 'grade': m['grade'],
+              'status': status,
             })
         .toList();
-    await _dio.post(
-      '/api/admin/exams/marks',
-      data: {'examTypeId': subject.examTypeId, 'rows': rows},
-    );
+    try {
+      await _dio.post(
+        '/api/admin/exams/marks',
+        data: {'examTypeId': subject.examTypeId, 'rows': rows},
+      );
+    } on DioException catch (e) {
+      final body = e.response?.data;
+      String? msg;
+      if (body is Map && body['error'] is String) {
+        msg = body['error'] as String;
+      } else if (body is String && body.isNotEmpty) {
+        msg = body;
+      }
+      // 403 → the marks-entry window is closed; surface a typed error so the
+      // notifier can switch the screen to read-only instead of showing a
+      // generic save failure.
+      if (e.response?.statusCode == 403) {
+        throw MarksLockedException(msg ??
+            'Marks entry for this exam is closed. '
+                'Contact an administrator to make changes.');
+      }
+      throw Exception(
+          msg ?? 'Failed to save marks (HTTP ${e.response?.statusCode}).');
+    }
   }
 
   /// Parses `{ students, marks }` where `marks` is keyed by `${studentId}_${subjectId}`.
   /// Falls back to a flat list if the backend ever returns that shape.
+  /// Result is sorted alphabetically by student name (case-insensitive).
   static List<StudentMark> _parseMarksResponse(dynamic data, String subjectId) {
+    List<StudentMark> result;
     if (data is Map<String, dynamic> &&
         data['students'] is List &&
         data['marks'] is Map) {
       final students = data['students'] as List;
       final marksMap = data['marks'] as Map;
-      return students.map((raw) {
+      result = students.map((raw) {
         final s = raw as Map<String, dynamic>;
         final id = (s['id'] ?? '').toString();
         final first = (s['firstName'] ?? '').toString();
@@ -92,11 +157,15 @@ class ExamRepository {
           grade: grade,
         );
       }).toList();
+    } else {
+      final list = _extractList(data);
+      result = list
+          .map((e) => StudentMark.fromJson(e as Map<String, dynamic>))
+          .toList();
     }
-    final list = _extractList(data);
-    return list
-        .map((e) => StudentMark.fromJson(e as Map<String, dynamic>))
-        .toList();
+    result.sort((a, b) =>
+        a.studentName.toLowerCase().compareTo(b.studentName.toLowerCase()));
+    return result;
   }
 
   Future<List<ReportCard>> fetchReportCards(String classId) async {

@@ -37,7 +37,9 @@ class AttendanceRepository {
     final list = _extractList(data);
     final students = list
         .map((e) => AttendanceStudent.fromJson(e as Map<String, dynamic>))
-        .toList();
+        .toList()
+      ..sort((a, b) =>
+          a.name.toLowerCase().compareTo(b.name.toLowerCase()));
 
     return MyClassAttendanceResponse(
       students: students,

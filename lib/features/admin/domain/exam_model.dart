@@ -11,6 +11,9 @@ class ExamSubject {
     required this.section,
     required this.maxMarks,
     required this.passingMarks,
+    this.isGraded = false,
+    this.locked = false,
+    this.marksEntryDeadline,
   });
 
   final String id;
@@ -24,6 +27,25 @@ class ExamSubject {
   final String section;
   final int maxMarks;
   final int passingMarks;
+  final bool isGraded;
+
+  /// `true` means marks entry is closed for this subject×exam-type — the
+  /// Mark Entry screen must render read-only for teachers.
+  final bool locked;
+
+  /// Last day teachers may edit marks. `null` means no deadline (open).
+  final DateTime? marksEntryDeadline;
+
+  /// Whole days from today until the deadline. Negative if past, `null` if
+  /// there is no deadline. Compared at day granularity (time-of-day ignored).
+  int? get daysUntilDeadline {
+    final d = marksEntryDeadline;
+    if (d == null) return null;
+    final now = DateTime.now();
+    return DateTime(d.year, d.month, d.day)
+        .difference(DateTime(now.year, now.month, now.day))
+        .inDays;
+  }
 
   factory ExamSubject.fromJson(Map<String, dynamic> json) {
     return ExamSubject(
@@ -40,6 +62,32 @@ class ExamSubject {
       maxMarks: _toInt(json['maxMarks'] ?? json['max_marks'] ?? 100),
       passingMarks:
           _toInt(json['passingMarks'] ?? json['passing_marks'] ?? 35),
+      isGraded: json['isGraded'] == true,
+      locked: json['locked'] == true,
+      marksEntryDeadline:
+          _toDate(json['marksEntryDeadline'] ?? json['marks_entry_deadline']),
+    );
+  }
+
+  ExamSubject copyWith({
+    bool? locked,
+    DateTime? marksEntryDeadline,
+  }) {
+    return ExamSubject(
+      id: id,
+      subjectId: subjectId,
+      examTypeId: examTypeId,
+      classId: classId,
+      sectionId: sectionId,
+      name: name,
+      examType: examType,
+      className: className,
+      section: section,
+      maxMarks: maxMarks,
+      passingMarks: passingMarks,
+      isGraded: isGraded,
+      locked: locked ?? this.locked,
+      marksEntryDeadline: marksEntryDeadline ?? this.marksEntryDeadline,
     );
   }
 
@@ -47,6 +95,14 @@ class ExamSubject {
     if (v is int) return v;
     if (v is num) return v.toInt();
     return int.tryParse(v.toString()) ?? 0;
+  }
+
+  static DateTime? _toDate(dynamic v) {
+    if (v == null) return null;
+    if (v is DateTime) return v;
+    final s = v.toString();
+    if (s.isEmpty) return null;
+    return DateTime.tryParse(s)?.toLocal();
   }
 }
 
@@ -149,6 +205,59 @@ class ReportCard {
     if (v is double) return v;
     if (v is num) return v.toDouble();
     return double.tryParse(v.toString()) ?? 0.0;
+  }
+}
+
+class TeacherExamSubject {
+  const TeacherExamSubject({
+    required this.id,
+    required this.name,
+    required this.code,
+    required this.isGraded,
+    this.classId,
+    this.sectionId,
+  });
+
+  final String id;
+  final String name;
+  final String code;
+  final bool isGraded;
+  final String? classId;
+  final String? sectionId;
+
+  factory TeacherExamSubject.fromJson(Map<String, dynamic> json) {
+    return TeacherExamSubject(
+      id: (json['id'] ?? '').toString(),
+      name: (json['name'] ?? '').toString(),
+      code: (json['code'] ?? '').toString(),
+      isGraded: json['isGraded'] == true,
+      classId: json['classId']?.toString(),
+      sectionId: json['sectionId']?.toString(),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'name': name,
+        'code': code,
+        'isGraded': isGraded,
+      };
+
+  TeacherExamSubject copyWith({
+    String? id,
+    String? name,
+    String? code,
+    bool? isGraded,
+    String? classId,
+    String? sectionId,
+  }) {
+    return TeacherExamSubject(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      code: code ?? this.code,
+      isGraded: isGraded ?? this.isGraded,
+      classId: classId ?? this.classId,
+      sectionId: sectionId ?? this.sectionId,
+    );
   }
 }
 

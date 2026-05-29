@@ -4,6 +4,7 @@ class MyProfile {
     required this.name,
     required this.email,
     required this.role,
+    this.isMotherTeacher = false,
     this.assignedClassId,
     this.assignedSectionId,
     this.assignedClassName,
@@ -14,6 +15,12 @@ class MyProfile {
   final String name;
   final String email;
   final String role;
+
+  /// Backend `User.isMotherTeacher`. When true, the teacher can manage
+  /// their own class — exam subjects, timetable. When false, all
+  /// mother-teacher self-service controls must be hidden in the UI.
+  final bool isMotherTeacher;
+
   final String? assignedClassId;
   final String? assignedSectionId;
   final String? assignedClassName;
@@ -27,6 +34,7 @@ class MyProfile {
       name: json['name']?.toString() ?? '',
       email: json['email']?.toString() ?? '',
       role: json['role']?.toString() ?? '',
+      isMotherTeacher: json['isMotherTeacher'] == true,
       assignedClassId: json['assignedClassId']?.toString(),
       assignedSectionId: json['assignedSectionId']?.toString(),
       assignedClassName: assignedClass is Map<String, dynamic>
