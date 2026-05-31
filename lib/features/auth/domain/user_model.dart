@@ -27,8 +27,10 @@ class UserModel {
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     // NextAuth session shape: { user: { id, name, email, role, employeeId, image, mustChangePassword }, expires }
-    final user =
-        json.containsKey('user') ? json['user'] as Map<String, dynamic> : json;
+    final rawUser = json['user'];
+    final user = rawUser is Map
+        ? rawUser.cast<String, dynamic>()
+        : json;
 
     final rawImage = user['image']?.toString();
     final expiresRaw = json['expires']?.toString() ?? user['expires']?.toString();

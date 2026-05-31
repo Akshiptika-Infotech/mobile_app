@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:cookie_jar/cookie_jar.dart';
 import 'package:dio/dio.dart';
 import 'package:dio_cookie_manager/dio_cookie_manager.dart';
@@ -44,6 +46,27 @@ Dio buildDioClient(
       ? PersistCookieJar(storage: FileStorage('$cookieDir/cookies/'))
       : CookieJar();
   dio.interceptors.add(CookieManager(cookieJar));
+
+  // JSON-string coercion — some backend routes (notably NextAuth) return JSON
+  // bodies with a non-JSON content-type (text/plain, text/html), so Dio leaves
+  // `response.data` as a raw String. Repositories then cast it to Map/List and
+  // crash with "type 'String' is not a subtype of type 'Map<String, dynamic>'".
+  // Decode any string body that looks like JSON, once, for every request.
+  dio.interceptors.add(
+    InterceptorsWrapper(
+      onResponse: (response, handler) {
+        response.data = _decodeIfJsonString(response.data);
+        handler.next(response);
+      },
+      onError: (DioException e, handler) {
+        final res = e.response;
+        if (res != null) {
+          res.data = _decodeIfJsonString(res.data);
+        }
+        handler.next(e);
+      },
+    ),
+  );
 
   // Debug-only request/response logger.
   if (kDebugMode) {
@@ -92,6 +115,26 @@ Dio buildDioClient(
   dio.interceptors.add(_RetryInterceptor(dio, maxRetries: 2));
 
   return dio;
+}
+
+/// Decodes a response body that arrived as a JSON-encoded [String].
+///
+/// Returns the parsed `Map`/`List` when [data] is a String whose first
+/// non-whitespace character is `{` or `[` and parses as valid JSON. Anything
+/// else (already-decoded objects, plain text, HTML error pages, malformed
+/// JSON) is returned unchanged so callers can handle it as they did before.
+dynamic _decodeIfJsonString(dynamic data) {
+  if (data is! String) return data;
+  final trimmed = data.trimLeft();
+  if (trimmed.isEmpty) return data;
+  final first = trimmed.codeUnitAt(0);
+  // 0x7B = '{', 0x5B = '['
+  if (first != 0x7B && first != 0x5B) return data;
+  try {
+    return jsonDecode(trimmed);
+  } catch (_) {
+    return data;
+  }
 }
 
 /// Retries failed requests on transient errors (timeouts and 5xx responses).

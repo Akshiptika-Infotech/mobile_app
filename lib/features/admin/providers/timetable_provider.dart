@@ -2,42 +2,24 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile_app/features/admin/data/timetable_repository.dart';
 import 'package:mobile_app/features/admin/domain/timetable_model.dart';
-import 'package:mobile_app/features/admin/providers/my_profile_provider.dart';
-import 'package:mobile_app/features/auth/domain/user_model.dart';
-import 'package:mobile_app/features/auth/providers/auth_provider.dart';
 
-final timetableProvider =
-    FutureProvider.autoDispose<List<TimetablePeriod>>((ref) async {
-  final repo = ref.watch(timetableRepositoryProvider);
-  return repo.fetchMyTimetable();
-});
-
-/// Teacher-scoped timetable.
-///
-/// If the logged-in user is a teacher with an assigned class/section,
-/// this filters [timetableProvider] so that only entries matching the
-/// teacher's scope are returned. This protects against backend bugs
-/// where `/api/teacher/timetable` returns entries for the wrong teacher
-/// or for the whole school.
+/// "My Timetable" — only the periods this teacher teaches, across every
+/// class/section. The backend scopes this via `?scope=mine`, so no client-side
+/// filtering is needed (filtering by section here would wrongly drop periods
+/// the teacher takes in other sections).
 final teacherTimetableProvider =
     FutureProvider.autoDispose<List<TimetablePeriod>>((ref) async {
-  final periods = await ref.watch(timetableProvider.future);
-  final user = ref.watch(currentUserProvider);
-  if (user?.role != AppRole.teacher) return periods;
+  final repo = ref.watch(timetableRepositoryProvider);
+  return repo.fetchTeacherTimetable(scope: 'mine');
+});
 
-  final profile = ref.watch(myProfileProvider).valueOrNull;
-  final teacherSectionId = profile?.assignedSectionId;
-  final teacherClassId = profile?.assignedClassId;
-
-  // Prefer section-level filtering (most precise).
-  if (teacherSectionId != null && teacherSectionId.isNotEmpty) {
-    return periods.where((p) => p.sectionId == teacherSectionId).toList();
-  }
-  // Fall back to class-level filtering.
-  if (teacherClassId != null && teacherClassId.isNotEmpty) {
-    return periods.where((p) => p.classId == teacherClassId).toList();
-  }
-  return periods;
+/// "My Class" — the full grid of the teacher's assigned class/section,
+/// including every teacher's periods (`?scope=class`). Cells show who takes
+/// each period; only the current teacher's own periods are editable.
+final classTimetableProvider =
+    FutureProvider.autoDispose<List<TimetablePeriod>>((ref) async {
+  final repo = ref.watch(timetableRepositoryProvider);
+  return repo.fetchTeacherTimetable(scope: 'class');
 });
 
 final adminTimetableProvider =

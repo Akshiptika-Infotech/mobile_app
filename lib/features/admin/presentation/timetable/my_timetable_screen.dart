@@ -26,6 +26,10 @@ class _MyTimetableScreenState extends ConsumerState<MyTimetableScreen>
 
   late TabController _tabController;
 
+  /// 'mine' = my periods across all classes; 'class' = full grid of my
+  /// assigned class/section (all teachers).
+  String _scope = 'mine';
+
   @override
   void initState() {
     super.initState();
@@ -43,14 +47,23 @@ class _MyTimetableScreenState extends ConsumerState<MyTimetableScreen>
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final periodsAsync = ref.watch(teacherTimetableProvider);
     final profileAsync = ref.watch(myProfileProvider);
     final isMotherTeacher = profileAsync.value?.isMotherTeacher ?? false;
     final assignedClassId = profileAsync.value?.assignedClassId;
+    final myTeacherId = profileAsync.value?.id;
+
+    // "My Class" only makes sense for a teacher who has an assigned class
+    // (class/mother teachers). Subject teachers see just "My Timetable".
+    final hasAssignedClass =
+        assignedClassId != null && assignedClassId.isNotEmpty;
+    final scope = hasAssignedClass ? _scope : 'mine';
+    final activeProvider =
+        scope == 'class' ? classTimetableProvider : teacherTimetableProvider;
+    final periodsAsync = ref.watch(activeProvider);
 
     ref.listen(teacherTimetableActionProvider, (prev, next) {
       if (next.success && prev?.success != true) {
-        ref.invalidate(teacherTimetableProvider);
+        ref.invalidate(activeProvider);
       }
       if (next.error != null && prev?.error != next.error) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -65,7 +78,7 @@ class _MyTimetableScreenState extends ConsumerState<MyTimetableScreen>
     return Scaffold(
       backgroundColor: cs.surfaceContainerLowest,
       appBar: AppBar(
-        title: const Text('My Timetable'),
+        title: const Text('Timetable'),
         centerTitle: false,
         bottom: TabBar(
           controller: _tabController,
@@ -74,28 +87,41 @@ class _MyTimetableScreenState extends ConsumerState<MyTimetableScreen>
           tabs: _days.map((d) => Tab(text: d.substring(0, 3))).toList(),
         ),
       ),
-      body: periodsAsync.when(
-        loading: () => _TimetableSkeleton(tabController: _tabController),
-        error: (e, _) => _ErrorState(
-          message: e.toString(),
-          onRetry: () => ref.invalidate(teacherTimetableProvider),
-        ),
-        data: (periods) => TabBarView(
-          controller: _tabController,
-          children: _days.asMap().entries.map((entry) {
-            final day = entry.value;
-            final dayPeriods = periods
-                .where((p) => p.day.toLowerCase() == day.toLowerCase())
-                .toList()
-              ..sort((a, b) => a.startTime.compareTo(b.startTime));
-            return _DayView(
-              day: day,
-              periods: dayPeriods,
-              isEditable: isMotherTeacher,
-              assignedClassId: assignedClassId,
-            );
-          }).toList(),
-        ),
+      body: Column(
+        children: [
+          if (hasAssignedClass)
+            _ScopeSelector(
+              scope: scope,
+              onChanged: (s) => setState(() => _scope = s),
+            ),
+          Expanded(
+            child: periodsAsync.when(
+              loading: () => _TimetableSkeleton(tabController: _tabController),
+              error: (e, _) => _ErrorState(
+                message: e.toString(),
+                onRetry: () => ref.invalidate(activeProvider),
+              ),
+              data: (periods) => TabBarView(
+                controller: _tabController,
+                children: _days.asMap().entries.map((entry) {
+                  final day = entry.value;
+                  final dayPeriods = periods
+                      .where((p) => p.day.toLowerCase() == day.toLowerCase())
+                      .toList()
+                    ..sort((a, b) => a.startTime.compareTo(b.startTime));
+                  return _DayView(
+                    day: day,
+                    periods: dayPeriods,
+                    isMotherTeacher: isMotherTeacher,
+                    scope: scope,
+                    myTeacherId: myTeacherId,
+                    assignedClassId: assignedClassId,
+                  );
+                }).toList(),
+              ),
+            ),
+          ),
+        ],
       ),
       floatingActionButton: isMotherTeacher
           ? FloatingActionButton(
@@ -157,13 +183,17 @@ class _DayView extends ConsumerWidget {
   const _DayView({
     required this.day,
     required this.periods,
-    required this.isEditable,
+    required this.isMotherTeacher,
+    required this.scope,
+    this.myTeacherId,
     this.assignedClassId,
   });
 
   final String day;
   final List<TimetablePeriod> periods;
-  final bool isEditable;
+  final bool isMotherTeacher;
+  final String scope;
+  final String? myTeacherId;
   final String? assignedClassId;
 
   @override
@@ -194,12 +224,21 @@ class _DayView extends ConsumerWidget {
     return ListView.builder(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
       itemCount: periods.length,
-      itemBuilder: (context, i) => _PeriodCard(
-        period: periods[i],
-        index: i,
-        isEditable: isEditable,
-        assignedClassId: assignedClassId,
-      ),
+      itemBuilder: (context, i) {
+        final period = periods[i];
+        // Own periods are editable in either scope; in the class grid other
+        // teachers' periods are read-only. In 'mine' scope every period is
+        // the teacher's own.
+        final isOwn = scope == 'mine' ||
+            (myTeacherId != null && period.teacherId == myTeacherId);
+        return _PeriodCard(
+          period: period,
+          index: i,
+          isEditable: isMotherTeacher && isOwn,
+          showTeacher: scope == 'class',
+          assignedClassId: assignedClassId,
+        );
+      },
     );
   }
 }
@@ -211,12 +250,14 @@ class _PeriodCard extends ConsumerWidget {
     required this.period,
     required this.index,
     required this.isEditable,
+    this.showTeacher = false,
     this.assignedClassId,
   });
 
   final TimetablePeriod period;
   final int index;
   final bool isEditable;
+  final bool showTeacher;
   final String? assignedClassId;
 
   static const _accentColors = [
@@ -325,8 +366,48 @@ class _PeriodCard extends ConsumerWidget {
                                   color: cs.onSurfaceVariant,
                                 ),
                               ),
+                              if (period.optionSlot) ...[
+                                const SizedBox(width: 6),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 6, vertical: 1),
+                                  decoration: BoxDecoration(
+                                    color: cs.tertiaryContainer,
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Text(
+                                    'OPTION',
+                                    style: TextStyle(
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.w800,
+                                      color: cs.onTertiaryContainer,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ],
                           ),
+                          if (showTeacher && period.teacherName.isNotEmpty) ...[
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                Icon(Icons.person_rounded,
+                                    size: 13, color: cs.onSurfaceVariant),
+                                const SizedBox(width: 4),
+                                Expanded(
+                                  child: Text(
+                                    period.teacherName,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: cs.onSurfaceVariant,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ],
                       ),
                     ),
@@ -693,6 +774,39 @@ class _SlotFormSheetState extends ConsumerState<_SlotFormSheet> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ── Scope selector (Mine | Class) ─────────────────────────────────────────────
+
+class _ScopeSelector extends StatelessWidget {
+  const _ScopeSelector({required this.scope, required this.onChanged});
+
+  final String scope;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+      child: SegmentedButton<String>(
+        segments: const [
+          ButtonSegment(
+            value: 'mine',
+            label: Text('My Timetable'),
+            icon: Icon(Icons.person_rounded, size: 18),
+          ),
+          ButtonSegment(
+            value: 'class',
+            label: Text('My Class'),
+            icon: Icon(Icons.groups_rounded, size: 18),
+          ),
+        ],
+        selected: {scope},
+        showSelectedIcon: false,
+        onSelectionChanged: (s) => onChanged(s.first),
       ),
     );
   }

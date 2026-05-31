@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:dio/dio.dart';
@@ -15,6 +16,29 @@ class AuthRepository {
 
   final Dio _dio;
 
+  /// Coerces a Dio `response.data` into a `Map<String, dynamic>?`.
+  ///
+  /// Dio only decodes JSON when the response carries a JSON content-type;
+  /// NextAuth routes sometimes return JSON as `text/plain`/`text/html`, leaving
+  /// `response.data` as a raw [String]. Casting that String directly to a Map
+  /// throws a `TypeError` (not a `DioException`), so we decode it here instead.
+  static Map<String, dynamic>? _asMap(dynamic data) {
+    if (data == null) return null;
+    if (data is Map<String, dynamic>) return data;
+    if (data is Map) return data.cast<String, dynamic>();
+    if (data is String) {
+      if (data.trim().isEmpty) return null;
+      try {
+        final decoded = jsonDecode(data);
+        if (decoded is Map<String, dynamic>) return decoded;
+        if (decoded is Map) return decoded.cast<String, dynamic>();
+      } catch (_) {
+        // Not JSON (e.g. an HTML error page) — treat as no data.
+      }
+    }
+    return null;
+  }
+
   /// Authenticates with NextAuth credentials provider.
   ///
   /// Returns the [UserModel] on success, throws [AuthException] on failure.
@@ -22,8 +46,8 @@ class AuthRepository {
     try {
       // Step 1: Obtain CSRF token required by NextAuth.
       final csrfResponse = await _dio.get('/api/auth/csrf');
-      final csrfData = csrfResponse.data as Map<String, dynamic>?;
-      final csrfToken = csrfData?['csrfToken'] as String?;
+      final csrfData = _asMap(csrfResponse.data);
+      final csrfToken = csrfData?['csrfToken']?.toString();
 
       // Step 2: POST credentials.
       await _dio.post(
@@ -59,7 +83,7 @@ class AuthRepository {
   Future<UserModel?> getSession() async {
     try {
       final response = await _dio.get('/api/auth/session');
-      final data = response.data as Map<String, dynamic>?;
+      final data = _asMap(response.data);
       if (data == null || data.isEmpty || data['user'] == null) return null;
       final user = UserModel.fromJson(data);
 
@@ -77,7 +101,7 @@ class AuthRepository {
   Future<UserModel?> refreshSession() async {
     try {
       final response = await _dio.get('/api/auth/session/refresh');
-      final data = response.data as Map<String, dynamic>?;
+      final data = _asMap(response.data);
       if (data == null || data.isEmpty || data['user'] == null) return null;
       final user = UserModel.fromJson(data);
 
@@ -92,7 +116,7 @@ class AuthRepository {
   Future<String?> _fetchProfileImage() async {
     try {
       final res = await _dio.get('/api/admin/profile');
-      final data = res.data as Map<String, dynamic>?;
+      final data = _asMap(res.data);
       final image = data?['image']?.toString();
       return (image == null || image.isEmpty) ? null : image;
     } on DioException {
@@ -114,7 +138,7 @@ class AuthRepository {
         'resourceType': 'image',
       });
       final res = await _dio.post('/api/admin/upload', data: form);
-      final data = res.data as Map<String, dynamic>?;
+      final data = _asMap(res.data);
       final url = (data?['url'] ?? data?['path'] ?? '').toString();
       if (url.isEmpty) {
         throw const AuthException('Upload failed: empty response.');
@@ -188,8 +212,8 @@ class AuthRepository {
     try {
       // Obtain CSRF token first.
       final csrfResponse = await _dio.get('/api/auth/csrf');
-      final csrfData = csrfResponse.data as Map<String, dynamic>?;
-      final csrfToken = csrfData?['csrfToken'] as String?;
+      final csrfData = _asMap(csrfResponse.data);
+      final csrfToken = csrfData?['csrfToken']?.toString();
 
       await _dio.post(
         '/api/auth/signout',

@@ -4,6 +4,7 @@ class TimetablePeriod {
     this.subjectId,
     required this.subject,
     required this.teacherName,
+    this.teacherId,
     this.classId,
     required this.className,
     this.sectionId,
@@ -12,12 +13,19 @@ class TimetablePeriod {
     required this.startTime,
     required this.endTime,
     this.periodNumber,
+    this.optionSlot = false,
   });
 
   final String id;
   final String? subjectId;
   final String subject;
   final String teacherName;
+
+  /// Backend `teacher.id` — used to decide whether the signed-in teacher may
+  /// edit this period. In the "My Class" (scope=class) grid every teacher's
+  /// periods are shown, but only the current teacher's own periods are
+  /// editable.
+  final String? teacherId;
   final String? classId;
   final String className;
   final String? sectionId;
@@ -26,6 +34,7 @@ class TimetablePeriod {
   final String startTime;
   final String endTime;
   final int? periodNumber;
+  final bool optionSlot;
 
   static String _readName(dynamic v) {
     if (v is String) return v;
@@ -44,6 +53,7 @@ class TimetablePeriod {
       subjectId: _readId(json['subject']),
       subject: _readName(json['subject']),
       teacherName: _readName(json['teacher']),
+      teacherId: _readId(json['teacher']) ?? json['teacherUserId']?.toString(),
       classId: _readId(json['class']) ?? json['classId']?.toString(),
       className: _readName(json['class']).isNotEmpty
           ? _readName(json['class'])
@@ -59,6 +69,7 @@ class TimetablePeriod {
       periodNumber: json['periodNumber'] != null
           ? int.tryParse(json['periodNumber'].toString())
           : null,
+      optionSlot: json['optionSlot'] == true,
     );
   }
 

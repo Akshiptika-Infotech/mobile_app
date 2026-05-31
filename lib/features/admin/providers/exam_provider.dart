@@ -83,9 +83,19 @@ class MarkEntryNotifier extends StateNotifier<MarkEntryState> {
     state =
         state.copyWith(selectedSubject: subject, isLoading: true, students: []);
     try {
-      final students = await _repo.fetchStudentMarks(subject);
+      final result = await _repo.fetchStudentMarks(subject);
       if (!mounted) return;
-      state = state.copyWith(students: students, isLoading: false);
+      // The load endpoint can close the window even when the exam row didn't,
+      // and may carry the authoritative deadline — merge both in.
+      final merged = subject.copyWith(
+        locked: subject.locked || result.locked,
+        marksEntryDeadline: result.marksEntryDeadline,
+      );
+      state = state.copyWith(
+        selectedSubject: merged,
+        students: result.students,
+        isLoading: false,
+      );
     } catch (e) {
       if (!mounted) return;
       state = state.copyWith(isLoading: false, error: e.toString());

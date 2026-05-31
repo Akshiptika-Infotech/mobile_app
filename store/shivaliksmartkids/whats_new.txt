@@ -1,0 +1,4 @@
+What's new in this update:
+• Teachers: exam marks now respect entry deadlines — closed exams open in read-only mode with a clear deadline notice, and a reminder appears when a window is about to close.
+• Smoother, more reliable marks entry with clearer error messages.
+• Performance improvements and minor bug fixes.

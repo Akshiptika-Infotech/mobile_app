@@ -17,6 +17,22 @@ class MarksLockedException implements Exception {
   String toString() => message;
 }
 
+/// Result of loading marks for a subject. Carries the roster plus the
+/// load-level `locked` / `marksEntryDeadline` flags returned by
+/// `/api/admin/exams/marks` (which may close the window even when the
+/// `/api/teacher/exams` row did not flag it).
+class StudentMarksResult {
+  const StudentMarksResult({
+    required this.students,
+    this.locked = false,
+    this.marksEntryDeadline,
+  });
+
+  final List<StudentMark> students;
+  final bool locked;
+  final DateTime? marksEntryDeadline;
+}
+
 class ExamRepository {
   ExamRepository(this._dio);
 
@@ -31,7 +47,7 @@ class ExamRepository {
         .toList();
   }
 
-  Future<List<StudentMark>> fetchStudentMarks(ExamSubject subject) async {
+  Future<StudentMarksResult> fetchStudentMarks(ExamSubject subject) async {
     // The backend `/api/admin/exams/marks` returns 400 on any missing
     // required id — fail fast with a clear message instead of letting
     // the user see a generic DioException.
@@ -59,7 +75,22 @@ class ExamRepository {
             'sectionId': subject.sectionId,
         },
       );
-      return _parseMarksResponse(response.data, subject.subjectId);
+      final students = _parseMarksResponse(response.data, subject.subjectId);
+      final data = response.data;
+      bool locked = false;
+      DateTime? deadline;
+      if (data is Map) {
+        locked = data['locked'] == true;
+        final raw = data['marksEntryDeadline'] ?? data['marks_entry_deadline'];
+        if (raw != null && raw.toString().isNotEmpty) {
+          deadline = DateTime.tryParse(raw.toString())?.toLocal();
+        }
+      }
+      return StudentMarksResult(
+        students: students,
+        locked: locked,
+        marksEntryDeadline: deadline,
+      );
     } on DioException catch (e) {
       // Show the server's actual error string instead of the generic
       // status-code wall of text.

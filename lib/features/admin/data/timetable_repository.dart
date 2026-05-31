@@ -13,8 +13,18 @@ class TimetableRepository {
 
   final Dio _dio;
 
-  Future<List<TimetablePeriod>> fetchMyTimetable() async {
-    final response = await _dio.get('/api/teacher/timetable');
+  /// Fetches the teacher timetable for [scope]:
+  /// - `mine` (default) → only the periods this teacher teaches, across all
+  ///   classes/sections ("My Timetable").
+  /// - `class` → the full grid of the teacher's assigned class/section,
+  ///   including every teacher's periods ("My Class").
+  Future<List<TimetablePeriod>> fetchTeacherTimetable({
+    String scope = 'mine',
+  }) async {
+    final response = await _dio.get(
+      '/api/teacher/timetable',
+      queryParameters: {'scope': scope},
+    );
     // Backend returns { entries: [...] }
     return extractList(response.data, keys: const ['entries', 'data', 'timetable', 'periods', 'schedule'])
         .map(TimetablePeriod.fromJson)
