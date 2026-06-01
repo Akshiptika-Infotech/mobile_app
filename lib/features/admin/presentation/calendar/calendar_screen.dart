@@ -122,7 +122,7 @@ class _CreateEventSheetState extends ConsumerState<_CreateEventSheet> {
 
   DateTime _startDate = DateTime.now();
   DateTime _endDate = DateTime.now();
-  String _type = 'EVENT';
+  String _type = 'HOLIDAY';
 
   /// `null` → school-wide event (no class scope).
   SchoolClass? _selectedClass;
@@ -142,7 +142,10 @@ class _CreateEventSheetState extends ConsumerState<_CreateEventSheet> {
     if (e == null) return;
     _titleCtrl.text = e.title;
     _descriptionCtrl.text = e.description;
-    _type = e.type.toUpperCase();
+    // Clamp to a known enum value so the dropdown never gets an item it
+    // can't render (and so we never POST an invalid eventType).
+    final existingType = e.type.toUpperCase();
+    _type = _types.containsKey(existingType) ? existingType : 'OTHER';
     final start = DateTime.tryParse(e.date);
     final end = DateTime.tryParse(e.endDate ?? '') ?? start;
     if (start != null) {
@@ -153,13 +156,17 @@ class _CreateEventSheetState extends ConsumerState<_CreateEventSheet> {
     // hydrate them in the first build via the dropdown's data branch.
   }
 
-  /// Server's `EventType` enum — kept uppercase to match the backend.
+  /// Backend `CalendarEventType` enum — values MUST match exactly, otherwise
+  /// `prisma.calendarEvent.create` throws and the API returns a 500
+  /// ("Server error"). Valid values: HOLIDAY, EXAM, SPORTS, CULTURAL,
+  /// MEETING, PTM, OTHER.
   static const _types = <String, String>{
-    'EVENT': 'Event',
     'HOLIDAY': 'Holiday',
     'EXAM': 'Exam',
-    'ACTIVITY': 'Activity',
+    'SPORTS': 'Sports',
+    'CULTURAL': 'Cultural',
     'MEETING': 'Meeting',
+    'PTM': 'PTM',
     'OTHER': 'Other',
   };
 

@@ -127,15 +127,15 @@ class _MonthGrid extends StatelessWidget {
     final totalCells =
         ((leadingBlanks + lastDay.day) / 7).ceil() * 7;
 
-    // Index events per day-of-month for quick lookup.
+    // Index events per day-of-month for quick lookup. Multi-day events (e.g. a
+    // holiday spanning several days) are bucketed onto every day in their
+    // inclusive [startDate, endDate] range, not just the start date.
     final eventDays = <int, List<CalendarEvent>>{};
     final events = eventsAsync.value ?? const <CalendarEvent>[];
-    for (final e in events) {
-      final d = DateTime.tryParse(e.date);
-      if (d == null) continue;
-      if (d.year == month.year && d.month == month.month) {
-        eventDays.putIfAbsent(d.day, () => []).add(e);
-      }
+    for (var day = 1; day <= lastDay.day; day++) {
+      final target = DateTime(month.year, month.month, day);
+      final matches = events.where((e) => e.coversDay(target)).toList();
+      if (matches.isNotEmpty) eventDays[day] = matches;
     }
 
     final today = DateTime.now();

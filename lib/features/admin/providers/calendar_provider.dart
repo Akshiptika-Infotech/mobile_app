@@ -41,9 +41,8 @@ class CalendarState {
   }
 
   List<CalendarEvent> eventsForDay(int day) {
-    final target =
-        '${year.toString().padLeft(4, '0')}-${month.toString().padLeft(2, '0')}-${day.toString().padLeft(2, '0')}';
-    return events.where((e) => e.date.startsWith(target)).toList();
+    final target = DateTime(year, month, day);
+    return events.where((e) => e.coversDay(target)).toList();
   }
 
   List<CalendarEvent> get selectedDayEvents {
