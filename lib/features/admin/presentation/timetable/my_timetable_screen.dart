@@ -662,7 +662,7 @@ class _SlotFormSheetState extends ConsumerState<_SlotFormSheet> {
             const SizedBox(height: 16),
             if (!isEdit) ...[
               DropdownButtonFormField<String>(
-                value: _dayOfWeek,
+                initialValue: _dayOfWeek,
                 decoration: InputDecoration(
                   labelText: 'Day',
                   border: OutlineInputBorder(
@@ -732,7 +732,7 @@ class _SlotFormSheetState extends ConsumerState<_SlotFormSheet> {
                   );
                 }
                 return DropdownButtonFormField<String>(
-                  value: _selectedSubjectId,
+                  initialValue: _selectedSubjectId,
                   isExpanded: true,
                   decoration: InputDecoration(
                     labelText: 'Subject',
